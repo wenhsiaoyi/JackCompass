@@ -25,3 +25,33 @@ replay_pid*
 
 # Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
 .kotlin/
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Build output
+build/
+bin/
+
+# Machine-specific SDK path — contains sdk.dir, never commit
+local.properties
+
+# Packaged artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Native / capture output
+.cxx/
+.externalNativeBuild/
+captures/
+
+# OS noise
+.DS_Store
+Thumbs.db

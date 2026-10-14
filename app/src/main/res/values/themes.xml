@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose 自行管理配色，這裡只需要一個無 ActionBar 的殼層主題 -->
+    <style name="Theme.JackCompass" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

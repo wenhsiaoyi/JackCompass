@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- API 24 / 25 使用的純向量版本；API 26+ 會改用 drawable-anydpi-v26/ic_launcher.xml -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M54,6 A48,48 0 1,1 53.99,6 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 L63,58 L54,52 L45,58 Z" />
+    <path
+        android:fillColor="#B0BEC5"
+        android:pathData="M54,80 L45,58 L54,64 L63,58 Z" />
+</vector>
