@@ -82,9 +82,9 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
 
 `SensorManager` 的 callback 目前沒有封裝層，之後三個功能共用的那一層還沒寫。
 
-## 原型落差（`spec/prototype.jpg`）
+## 原型落差
 
-prototype 目前**沒有實作**，且與現況不一致，改動前先跟使用者確認：
+指 `spec/prototype.jpg`。該圖目前**沒有實作**，且與現況不一致，改動前先跟使用者確認：
 
 - prototype 是 **4 個分頁**（Compass / Level / Map / Settings），現況是 3 個且無 Settings
 - prototype 把**指南針與水平儀放在同一個畫面**（中間是羅盤盤面），現況是兩個獨立分頁
