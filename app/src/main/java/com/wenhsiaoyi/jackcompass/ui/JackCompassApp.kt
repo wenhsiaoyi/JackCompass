@@ -1,31 +1,67 @@
 package com.wenhsiaoyi.jackcompass.ui
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.wenhsiaoyi.jackcompass.R
 import com.wenhsiaoyi.jackcompass.ui.compass.CompassScreen
 import com.wenhsiaoyi.jackcompass.ui.gps.GpsScreen
 import com.wenhsiaoyi.jackcompass.ui.level.LevelScreen
+import com.wenhsiaoyi.jackcompass.ui.settings.SettingsScreen
 
 /** 底部導覽列的三個工具分頁。新增工具時在這裡加一筆即可。 */
 private enum class ToolDestination(
     val route: String,
-    val label: String,
+    @param:StringRes val labelRes: Int,
 ) {
-    Compass("compass", "指南針"),
-    Level("level", "水平儀"),
-    Gps("gps", "GPS"),
+    Compass("compass", R.string.tab_compass),
+    Level("level", R.string.tab_level),
+    Gps("gps", R.string.tab_gps),
+}
+
+/** 不在導覽列上的頁面路由。 */
+private const val SETTINGS_ROUTE = "settings"
+
+/** 導覽列的第一個分頁同時是 NavHost 的起始路由。 */
+private val startRoute = ToolDestination.Compass.route
+
+/**
+ * 點分頁時的跳轉。
+ *
+ * 起點分頁要單獨處理：一般的 `popUpTo(起點){saveState}` + `restoreState`
+ * 會先把被彈掉的頁面（例如設定頁）存進起點 entry 的保存棧，緊接著
+ * restoreState 又把它還原回來，結果點了指南針卻回到設定頁。
+ * 對起點分頁改用 popBackStack，只往上彈、不重新入棧。
+ */
+private fun NavHostController.selectTab(route: String) {
+    if (route == startRoute) {
+        popBackStack(route, inclusive = false)
+        return
+    }
+    navigate(route) {
+        popUpTo(startRoute) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
 }
 
 /*
@@ -50,30 +86,41 @@ fun JackCompassApp() {
 
                     NavigationBarItem(
                         selected = selected,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onClick = { navController.selectTab(destination.route) },
                         icon = {},
-                        label = { Text(destination.label) },
+                        label = { Text(stringResource(destination.labelRes)) },
                     )
                 }
             }
         },
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = ToolDestination.Compass.route,
-            modifier = Modifier.padding(innerPadding),
-        ) {
-            composable(ToolDestination.Compass.route) { CompassScreen() }
-            composable(ToolDestination.Level.route) { LevelScreen() }
-            composable(ToolDestination.Gps.route) { GpsScreen() }
+        val onSettings = currentDestination?.hierarchy?.any { it.route == SETTINGS_ROUTE } == true
+
+        Box(modifier = Modifier.padding(innerPadding)) {
+            NavHost(
+                navController = navController,
+                startDestination = ToolDestination.Compass.route,
+            ) {
+                composable(ToolDestination.Compass.route) { CompassScreen() }
+                composable(ToolDestination.Level.route) { LevelScreen() }
+                composable(ToolDestination.Gps.route) { GpsScreen() }
+                composable(SETTINGS_ROUTE) { SettingsScreen() }
+            }
+
+            // 右上齒輪：任何分頁都能進設定；設定頁本身不重複顯示
+            if (!onSettings) {
+                IconButton(
+                    onClick = { navController.navigate(SETTINGS_ROUTE) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_settings),
+                        contentDescription = stringResource(R.string.settings_open),
+                    )
+                }
+            }
         }
     }
 }

@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <!-- 指南針刻度震動 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!--
       宣告為 required="false"：沒有這些感測器的裝置仍可安裝，
       只是對應畫面會顯示「此裝置不支援」。
@@ -20,9 +23,20 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.JackCompass">
+
+        <!-- API 32 以下：讓 appcompat 自動保存 App 內切換的語系（官方文件機制） -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
 
         <activity
             android:name=".MainActivity"

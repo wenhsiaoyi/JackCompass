@@ -7,6 +7,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.wenhsiaoyi.jackcompass.R
 
 /**
  * GPS 畫面。
@@ -21,7 +23,7 @@ fun GpsScreen(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "GPS\n尚未實作",
+            text = stringResource(R.string.gps_not_implemented),
             style = MaterialTheme.typography.bodyLarge,
         )
     }

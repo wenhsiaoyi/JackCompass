@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 供系統「App 語言」設定頁识别的支援語系清單（API 33+） -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="zh-CN" />
+    <locale android:name="zh-TW" />
+</locale-config>

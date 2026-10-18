@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Compose 自行管理配色，這裡只需要一個無 ActionBar 的殼層主題 -->
-    <style name="Theme.JackCompass" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Compose 自行管理配色，這裡只需要一個無 ActionBar 的殼層主題。
+         AppCompatActivity 要求 Theme.AppCompat 後代，故用 DayNight 跟隨系統深淺色。 -->
+    <style name="Theme.JackCompass" parent="Theme.AppCompat.DayNight.NoActionBar" />
 </resources>

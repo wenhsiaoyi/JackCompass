@@ -1,4 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 預設語系：英文（非中文裝置一律走到這裡） -->
 <resources>
     <string name="app_name">JackCompass</string>
+
+    <string name="tab_compass">Compass</string>
+    <string name="tab_level">Level</string>
+    <string name="tab_gps">GPS</string>
+
+    <string name="compass_no_sensor">This device has no orientation sensor; the compass is unavailable</string>
+    <string name="level_no_sensor">This device has no accelerometer; the level is unavailable</string>
+    <!-- 狀態指示，刻意與分頁名 "Level" 區隔 -->
+    <string name="level_locked">On level</string>
+    <string name="level_mode_horizontal">HORIZONTAL</string>
+    <string name="level_mode_vertical">VERTICAL</string>
+    <string name="gps_not_implemented">GPS\nNot implemented yet</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_open">Open settings</string>
+
+    <!-- 羅盤盤面四正方位，順序固定為 N / E / S / W -->
+    <string-array name="dial_cardinals">
+        <item>N</item>
+        <item>E</item>
+        <item>S</item>
+        <item>W</item>
+    </string-array>
+
+    <string-array name="cardinal_directions">
+        <item>N</item>
+        <item>NE</item>
+        <item>E</item>
+        <item>SE</item>
+        <item>S</item>
+        <item>SW</item>
+        <item>W</item>
+        <item>NW</item>
+    </string-array>
 </resources>
