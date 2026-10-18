@@ -8,6 +8,70 @@ Kotlin + Jetpack Compose 寫的 Android 工具箱 app：**指南針 / 水平儀 
 **三個畫面目前都只是佔位符**（顯示「尚未實作」），沒有任何感測器或定位的實作。
 `spec/prototype.jpg` 是設計參考圖，**尚未實作**，而且它與目前的 scaffold 有出入（見下方「原型落差」）。
 
+## 工作流程（`.agents/` 的 skill）
+
+`.agents/<name>/SKILL.md` 是每個 skill 的規則正本；**本節只是導覽指標**，說明什麼情況該去讀哪一份。
+規則要改就改 SKILL.md，不要在本檔放第二份。
+專案這層的 `.agents/<name>/` 不會出現在 skill 清單（`~/.agents/skills/<name>/` 才會），要用 `read` 開檔。
+
+主線：
+
+```text
+含糊的想法 → grill-with-docs → to-spec → to-tickets → implement-spec → code-review → pr
+大到一個 session 裝不下的工程 → wayfinder 先畫地圖，再回到主線
+每個 ticket 的內部 → tdd
+事後 → retro
+```
+
+| 情況 | Skill |
+|---|---|
+| 第一次用這套 skill 之前：設定 tracker、標籤、文件佈局 | `setup-matt-pocock-skills` |
+| 計畫／設計還含糊，要問到鋒利（順手產出 ADR 與 glossary） | `grill-with-docs` |
+| 工程大到一個 session 吃不完：在 tracker 上畫「地圖」，一次解一張決策 ticket | `wayfinder` |
+| 對話已經足夠，要合成規格（不訪談）並發到 tracker | `to-spec` |
+| 規格要切成可動工的 tracer bullet ticket，標好 blocking edge | `to-tickets` |
+| 規格與 ticket 都齊了，要落地到 integration branch | `implement-spec` |
+| 每個 ticket 的實作方式：紅 → 綠 | `tdd` |
+| 收工前／合併前的兩軸審查（Standards / Spec） | `code-review` |
+| 要寫 PR body | `pr` |
+| 回顧 session，改進 agent 的環境 | `retro` |
+| 要寫 skill、`AGENTS.md`、`CLAUDE.md`，或任何給 agent 讀的文件 | `writing-for-agents` |
+
+貫穿所有流程的規則：
+
+- **接縫（seam）**：測試只寫在使用者確認過的公開接縫上；先談定接縫清單，再寫紅的測試。
+- **前線（frontier）**：ticket 是 task graph、不是步驟清單；只拿 blockers 全清的那些，其餘等。
+- **指標（context pointer）**：subagent 之間靠 spec、ticket、研究筆記、commit 的指標溝通，不重述內容。
+- **證據先於宣稱**：講「完成／會過」之前，先把指令跑過，並貼出實際輸出。
+- **規格與 ticket 不放檔案路徑與程式碼片段**（會過期）；例外是 prototype 產出、真的承載決策的片段。
+- **`disable-model-invocation: true` 的 skill 由使用者點名才跑**（`setup-matt-pocock-skills`、`wayfinder`、
+  `grill-with-docs`、`to-spec`、`to-tickets`、`implement-spec`、`retro`），agent 不自己開。
+
+### 本專案對這些 skill 的現況落差
+
+- **`GLOSSARY.md` 與 `docs/adr/` 還不存在**：不存在就靜默略過，等真的有術語被定出來再建
+  （見 `docs/agents/domain.md`）。
+- **測試面是零**：`app/src` 下只有 `main`，沒有 `test/` 與 `androidTest/`，`.\gradlew.bat test` 跑不到東西。
+  要用 `tdd` 就得先立第一個接縫與測試目錄。
+- **部分被引用的同伴 skill 還不存在**：`grill-with-docs` 與 `wayfinder` 要呼叫的
+  `grilling`／`domain-modeling`／`research`／`prototype`、`tdd` 指向的 `codebase-design`，在 `.agents/`、
+  `~/.agents/skills/`、`~/.claude/skills/` 都找不到。碰到就先告訴使用者缺哪一個，
+  然後用對話把那一步直接做完（把題目問清楚、自己寫研究筆記）。
+- **`.agents/` 還沒進版控**（`git status` 顯示 `?? .agents/`）：要讓其他 session 或 CI 共用，得先 commit。
+- **兩個外掛 skill 不落在本專案**：`frontend-design` 與 `ui-design` 針對 web／iOS（`ui-design` 的 `/uizze`
+  子命令與 scripts 亦然），本專案 UI 是 Android Compose，只取其中的美感與文案原則；
+  `kotlin-tooling-native-build-performance` 針對 KMP + iOS 的建置變慢，本專案 Android-only、無 KMP 與 iOS target。
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as GitHub issues, driven by the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` plus `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
 ## 版本組合（已實際建置驗證）
 
 | 項目 | 版本 | 位置 |
