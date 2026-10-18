@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- API 24 / 25 使用的純向量版本；API 26+ 會改用 drawable-anydpi-v26/ic_launcher.xml -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-
-    <path
-        android:fillColor="#D32F2F"
-        android:pathData="M54,6 A48,48 0 1,1 53.99,6 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,28 L63,58 L54,52 L45,58 Z" />
-    <path
-        android:fillColor="#B0BEC5"
-        android:pathData="M54,80 L45,58 L54,64 L63,58 Z" />
-</vector>
+<!--
+  API 24／25 沒有自適應圖示，啟動器也不會套遮罩，直接用疊層：
+  滿版橘漸層＋前景，前景向外負 inset 把圖放大约 1.17 倍，
+  填滿沒有遮罩修整的方形邊框。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_launcher_background" />
+    <item
+        android:bottom="-9dp"
+        android:drawable="@drawable/ic_launcher_foreground"
+        android:left="-9dp"
+        android:right="-9dp"
+        android:top="-9dp" />
+</layer-list>

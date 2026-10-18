@@ -1,13 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  自適應圖示的前景層。座標是手算的，記下算法方便之後微調：
+  畫布 108x108、圓心 (54,54)；遮罩保證可見的是中央 72dp（半徑 36），
+  安全區取半徑 33，所有筆畫都收在 32 以內。
+    · 玫瑰：八個針尖，正交 r=21、斜角 r=15，針尖間的凹點 r=6
+    · 指針：NE-SW 對角，r=29 的兩個三角形共用 hub 上的底邊（寬 7.2）
+    · 字母：N/E/S/W 各在正交方向，視覺框約 7x8，置中於 r=28
+  字母直接 bake 成 pathData（不用 group 變換），避免 VectorDrawable
+  的 scale/translate 套用順序在不同版本上產生位移。
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- 玫瑰本體：半透明暖白，讓橘底從未受光的那半透出來 -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,28 L63,58 L54,52 L45,58 Z" />
+        android:fillColor="#CCFFF3E6"
+        android:pathData="M54,33 L56.3,48.46 L64.61,43.39 L59.54,51.7 L75,54 L59.54,56.3 L64.61,64.61 L56.3,59.54 L54,75 L51.7,59.54 L43.39,64.61 L48.46,56.3 L33,54 L48.46,51.7 L43.39,43.39 L51.7,48.46 Z" />
+
+    <!-- 受光的八個半面：純白，做出摺面 -->
     <path
-        android:fillColor="#B0BEC5"
-        android:pathData="M54,80 L45,58 L54,64 L63,58 Z" />
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,33 L56.3,48.46 L54,54 Z M64.61,43.39 L59.54,51.7 L54,54 Z M75,54 L59.54,56.3 L54,54 Z M64.61,64.61 L56.3,59.54 L54,54 Z M54,75 L51.7,59.54 L54,54 Z M43.39,64.61 L48.46,56.3 L54,54 Z M33,54 L48.46,51.7 L54,54 Z M43.39,43.39 L51.7,48.46 L54,54 Z" />
+
+    <!-- 羅盤外圈細環 -->
+    <path
+        android:strokeColor="#66FFFFFF"
+        android:strokeWidth="1.1"
+        android:pathData="M37.5,54 A16.5,16.5 0 1,1 70.5,54 A16.5,16.5 0 1,1 37.5,54 Z" />
+
+    <!-- 指針：NE 半面受光純白，SW 半面偏暖灰。
+         兩個半面共用同一條底邊（過圓心、垂直於指針軸），
+         底邊若誤取成軸向座標會退化成一條線。 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M74.51,33.49 L56.55,56.55 L51.45,51.45 Z" />
+    <path
+        android:fillColor="#FFF0E2D4"
+        android:pathData="M33.49,74.51 L56.55,56.55 L51.45,51.45 Z" />
+
+    <!-- 指針軸心：白環＋橘孔 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M49,54 A5,5 0 1,1 59,54 A5,5 0 1,1 49,54 Z" />
+    <path
+        android:fillColor="#FFC24A0C"
+        android:pathData="M51.4,54 A2.6,2.6 0 1,1 56.6,54 A2.6,2.6 0 1,1 51.4,54 Z" />
+
+    <!-- N / E / S / W 四個方位字。
+         一律用「描邊」而不是填色方棒：填色拼出來的 S 在小尺寸會糊成 5，
+         改成圓頭筆畫後四個字都是同一套幾何無襯線，48dp 下也認得出。
+         座標是筆畫中心線（視覺外框 = 中心線 ± 筆寬一半 = ±1）。 -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M51.4,29.0 L51.4,23.0 L56.6,29.0 L56.6,23.0 M84.6,51.0 L79.4,51.0 L79.4,57.0 L84.6,57.0 M79.4,54.0 L84.0,54.0 M56.25,79.75 A2.6,1.5 0 1,0 54,82.0 A2.6,1.5 0 1,1 51.75,84.25 M23.14,50.84 L24.57,57.25 L26.0,52.6 L27.43,57.25 L28.86,50.84" />
 </vector>

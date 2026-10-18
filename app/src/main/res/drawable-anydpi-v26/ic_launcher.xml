@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  API 26+ 的自適應圖示。三層各自獨立：
+  background 必須滿版、foreground 收在 66dp 安全區、
+  monochrome 給 Android 13+ 的主題圖示（系統只取 alpha 再染色）。
+  早期直接把彩色前景塞給 monochrome 是錯的：灰色那半會變成半透明。
+-->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/ic_launcher_background" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>

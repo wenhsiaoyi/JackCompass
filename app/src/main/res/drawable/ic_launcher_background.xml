@@ -1,5 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#D32F2F" />
-</shape>
+<!--
+  自適應圖示的背景層：必須**滿版** 108x108。
+  遮罩（圓形／方圓形）會切掉外緣，只要背景沒鋪滿就會露出啟動器自己的底色，
+  所以這裡不畫圓角——圓角由啟動器的遮罩決定。
+  色澤取自 docs/icons/Logo.jpg：左上受光、右下陰影的橘。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 主漸層：色澤直接取 Logo.jpg 盤面的實測值
+         （亮部 #E17E18、中間 #DC6F14、右下 #C63B00、深角 #9D2E00），
+         起訖點收在遮罩可見的圓形範圍內，否則圓裡只會看到中段顏色。 -->
+    <path android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="28"
+                android:startY="18"
+                android:endX="80"
+                android:endY="92">
+                <item android:offset="0" android:color="#FFE5871F" />
+                <item android:offset="0.5" android:color="#FFDC6A0F" />
+                <item android:offset="1" android:color="#FFA32C00" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 左上那團柔光：讓平面橘色有厚度。
+         透明度壓在 15% 以下——再高就會把橘色洗成粉橘，失去品牌色。 -->
+    <path android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="40"
+                android:centerY="32"
+                android:gradientRadius="62">
+                <item android:offset="0" android:color="#26FFFFFF" />
+                <item android:offset="0.6" android:color="#0DFFFFFF" />
+                <item android:offset="1" android:color="#00FFFFFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 右下壓暗，做出由上往下的重量感 -->
+    <path android:pathData="M0,0 L108,0 L108,108 L0,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="74"
+                android:centerY="86"
+                android:gradientRadius="62">
+                <item android:offset="0" android:color="#403A1000" />
+                <item android:offset="1" android:color="#003A1000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>
