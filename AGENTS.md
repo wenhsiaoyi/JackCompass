@@ -72,6 +72,10 @@ Issues and specs live as GitHub issues, driven by the `gh` CLI. See `docs/agents
 
 Single-context: one `GLOSSARY.md` plus `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
+## 文件
+
+- `docs/AGENTS.html`：本檔的網頁版快照（深色、左側目錄），給人讀的。**改完本檔要重新產生它**，它不會自己跟著更新。
+
 ## 版本組合（已實際建置驗證）
 
 | 項目 | 版本 | 位置 |

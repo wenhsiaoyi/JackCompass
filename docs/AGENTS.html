@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="JackCompass 的 AGENTS.md：repo 現況、工具鏈陷阱與 agent skill 工作流程。">
+<title>AGENTS.md · JackCompass</title>
+<style>
+:root {
+  --bg: #0e1116;
+  --surface: #161b22;
+  --surface-2: #1c222b;
+  --line: #2a313c;
+  --ink: #e6edf3;
+  --ink-dim: #9ba7b4;
+  --accent: #ff7a1a;
+  --accent-soft: #ffb27a;
+  --secondary: #3ddc84;
+  --mono: "Cascadia Code", "Consolas", ui-monospace, SFMono-Regular, "SF Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+  --measure: 68ch;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-text-size-adjust: 100%;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: #0e1116;
+  padding: .5rem .9rem;
+  border-radius: 0 0 var(--radius) 0;
+  font-weight: 600;
+}
+.skip:focus { left: 0; z-index: 10; }
+
+/* ---------- masthead ---------- */
+.masthead {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 2.75rem 1.5rem 1.75rem;
+  border-bottom: 1px solid var(--line);
+}
+.dial { flex: 0 0 auto; }
+.eyebrow {
+  margin: 0 0 .35rem;
+  font-family: var(--mono);
+  font-size: .74rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--secondary);
+}
+.masthead h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 4.5vw, 2.35rem);
+  letter-spacing: -.015em;
+  font-weight: 650;
+}
+.standfirst {
+  margin: .5rem 0 0;
+  max-width: 46ch;
+  color: var(--ink-dim);
+  font-size: .95rem;
+}
+
+/* ---------- layout ---------- */
+.shell {
+  display: grid;
+  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+  gap: 3.5rem;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.toc { position: sticky; top: 2rem; align-self: start; max-height: calc(100vh - 4rem); overflow: auto; }
+.toc-label {
+  margin: 0 0 .6rem;
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: block;
+  padding: .3rem .7rem;
+  border-left: 2px solid var(--line);
+  color: var(--ink-dim);
+  font-size: .88rem;
+  line-height: 1.4;
+  text-decoration: none;
+}
+.toc a code { background: none; color: inherit; padding: 0; font-size: .95em; }
+@media (prefers-reduced-motion: no-preference) {
+  .toc a { transition: color .15s ease, border-color .15s ease; }
+}
+.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+
+main { min-width: 0; }
+/* 正文維持可讀行長；程式碼與表格用滿整個欄位，才不會被行長切掉或擠到換行 */
+main > p, main > ul, main > h2, main > h3 { max-width: var(--measure); }
+
+/* ---------- headings ---------- */
+main h2 {
+  position: relative;
+  margin: 3rem 0 .9rem;
+  padding-left: 1rem;
+  font-size: 1.32rem;
+  font-weight: 640;
+  letter-spacing: -.01em;
+  scroll-margin-top: 1.5rem;
+}
+main h2:first-child { margin-top: 0; }
+main h2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .52em;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--secondary);
+}
+main h3 {
+  margin: 2.1rem 0 .65rem;
+  padding-left: .72rem;
+  border-left: 2px solid var(--line);
+  font-size: 1.06rem;
+  font-weight: 620;
+  color: var(--ink);
+  scroll-margin-top: 1.5rem;
+}
+
+/* ---------- text ---------- */
+p { margin: .8rem 0; }
+strong { font-weight: 660; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:hover { color: var(--accent-soft); }
+
+code {
+  font-family: var(--mono);
+  font-size: .875em;
+  color: var(--accent-soft);
+  background: var(--surface-2);
+  padding: .1em .38em;
+  border-radius: 4px;
+}
+
+ul { margin: .8rem 0; padding-left: 1.25rem; }
+li { margin: .45rem 0; }
+li::marker { color: var(--accent); }
+
+pre.code {
+  margin: 1.1rem 0;
+  padding: .9rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  line-height: 1.6;
+}
+pre.code code {
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  font-size: .84rem;
+}
+
+/* ---------- tables ---------- */
+.table-wrap { margin: 1.2rem 0; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { padding: .6rem .85rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th {
+  font-family: var(--mono);
+  font-size: .74rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: var(--surface);
+  font-weight: 600;
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+td code { font-size: .84em; }
+
+/* ---------- focus + footer ---------- */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+footer {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem 3rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-size: .84rem;
+}
+footer p { margin: .25rem 0; }
+
+/* ---------- narrow ---------- */
+@media (max-width: 60rem) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-top: 1.75rem; }
+  .toc { position: static; max-height: none; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line); }
+  .toc ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+  .masthead { align-items: flex-start; gap: 1.1rem; padding-top: 2rem; }
+  .dial { width: 52px; height: 52px; }
+}
+
+/* ---------- print ---------- */
+@media print {
+  :root {
+    --bg: #fff; --surface: #fff; --surface-2: #f4f4f4; --line: #ccd0d5;
+    --ink: #111315; --ink-dim: #4a5158; --accent: #a8460a; --accent-soft: #8a3906;
+    --secondary: #0a7a45;
+  }
+  .toc, .dial, .skip { display: none; }
+  .shell { display: block; padding: 0; }
+  main { max-width: none; }
+  pre.code, table, .table-wrap { break-inside: avoid; }
+  a { text-decoration: underline; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到內容</a>
+
+<header class="masthead">
+  <svg class="dial" width="72" height="72" viewBox="0 0 64 64" role="img" aria-label="指北針盤面">
+    <circle cx="32" cy="32" r="27.5" fill="none" stroke="#2a313c" stroke-width="2.5"/>
+    <g stroke="#9ba7b4" stroke-width="2.5" stroke-linecap="round">
+      <path d="M32 3v6M32 55v6M3 32h6M55 32h6"/>
+    </g>
+    <g transform="rotate(-18 32 32)">
+      <path d="M32 8l5 22-5-3-5 3z" fill="#ff7a1a"/>
+      <path d="M32 56l-5-22 5 3 5-3z" fill="#3ddc84" fill-opacity=".45"/>
+    </g>
+    <circle cx="32" cy="32" r="3" fill="#e6edf3"/>
+    <circle cx="32" cy="32" r="1.3" fill="#0e1116"/>
+  </svg>
+  <div>
+    <p class="eyebrow">JackCompass · 指南針 / 水平儀 / GPS</p>
+    <h1>AGENTS.md</h1>
+    <p class="standfirst">這個 repo 給 agent 的操作說明：目前現況、工具鏈陷阱，以及該走的工作流程。</p>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="章節">
+    <p class="toc-label">章節</p>
+    <ol>
+      <li><a href="#h-2">Repo 現況</a></li>
+      <li><a href="#h-3">工作流程（<code>.agents/</code> 的 skill）</a></li>
+      <li><a href="#h-5">Agent skills</a></li>
+      <li><a href="#h-8">文件</a></li>
+      <li><a href="#h-9">版本組合（已實際建置驗證）</a></li>
+      <li><a href="#h-10">常用指令</a></li>
+      <li><a href="#h-11">工具鏈陷阱（皆已實測）</a></li>
+      <li><a href="#h-12">AGP 9 的兩個大坑</a></li>
+      <li><a href="#h-13">架構</a></li>
+      <li><a href="#h-15">原型落差</a></li>
+      <li><a href="#h-16">已知事項</a></li>
+    </ol>
+  </nav>
+  <main id="main">
+    <h2 id="h-2">Repo 現況</h2>
+    <p>Kotlin + Jetpack Compose 寫的 Android 工具箱 app：<strong>指南針 / 水平儀 / GPS</strong>。<code>0e2f092</code> 當時只有 <code>README.md</code> 與 GitHub 的 Java 版 <code>.gitignore</code>；目前已有一份可建置的空專案。</p>
+    <p><strong>三個畫面目前都只是佔位符</strong>（顯示「尚未實作」），沒有任何感測器或定位的實作。<code>spec/prototype.jpg</code> 是設計參考圖，<strong>尚未實作</strong>，而且它與目前的 scaffold 有出入（見下方「原型落差」）。</p>
+    <h2 id="h-3">工作流程（<code>.agents/</code> 的 skill）</h2>
+    <p><code>.agents/&lt;name&gt;/SKILL.md</code> 是每個 skill 的規則正本；<strong>本節只是導覽指標</strong>，說明什麼情況該去讀哪一份。規則要改就改 SKILL.md，不要在本檔放第二份。專案這層的 <code>.agents/&lt;name&gt;/</code> 不會出現在 skill 清單（<code>~/.agents/skills/&lt;name&gt;/</code> 才會），要用 <code>read</code> 開檔。</p>
+    <p>主線：</p>
+    <pre class="code" data-lang="text"><code>含糊的想法 → grill-with-docs → to-spec → to-tickets → implement-spec → code-review → pr
+大到一個 session 裝不下的工程 → wayfinder 先畫地圖，再回到主線
+每個 ticket 的內部 → tdd
+事後 → retro</code></pre>
+    <div class="table-wrap"><table>
+      <thead><tr><th>情況</th><th>Skill</th></tr></thead>
+      <tbody>
+      <tr><td>第一次用這套 skill 之前：設定 tracker、標籤、文件佈局</td><td><code>setup-matt-pocock-skills</code></td></tr>
+      <tr><td>計畫／設計還含糊，要問到鋒利（順手產出 ADR 與 glossary）</td><td><code>grill-with-docs</code></td></tr>
+      <tr><td>工程大到一個 session 吃不完：在 tracker 上畫「地圖」，一次解一張決策 ticket</td><td><code>wayfinder</code></td></tr>
+      <tr><td>對話已經足夠，要合成規格（不訪談）並發到 tracker</td><td><code>to-spec</code></td></tr>
+      <tr><td>規格要切成可動工的 tracer bullet ticket，標好 blocking edge</td><td><code>to-tickets</code></td></tr>
+      <tr><td>規格與 ticket 都齊了，要落地到 integration branch</td><td><code>implement-spec</code></td></tr>
+      <tr><td>每個 ticket 的實作方式：紅 → 綠</td><td><code>tdd</code></td></tr>
+      <tr><td>收工前／合併前的兩軸審查（Standards / Spec）</td><td><code>code-review</code></td></tr>
+      <tr><td>要寫 PR body</td><td><code>pr</code></td></tr>
+      <tr><td>回顧 session，改進 agent 的環境</td><td><code>retro</code></td></tr>
+      <tr><td>要寫 skill、<code>AGENTS.md</code>、<code>CLAUDE.md</code>，或任何給 agent 讀的文件</td><td><code>writing-for-agents</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>貫穿所有流程的規則：</p>
+    <ul>
+      <li><strong>接縫（seam）</strong>：測試只寫在使用者確認過的公開接縫上；先談定接縫清單，再寫紅的測試。</li>
+      <li><strong>前線（frontier）</strong>：ticket 是 task graph、不是步驟清單；只拿 blockers 全清的那些，其餘等。</li>
+      <li><strong>指標（context pointer）</strong>：subagent 之間靠 spec、ticket、研究筆記、commit 的指標溝通，不重述內容。</li>
+      <li><strong>證據先於宣稱</strong>：講「完成／會過」之前，先把指令跑過，並貼出實際輸出。</li>
+      <li><strong>規格與 ticket 不放檔案路徑與程式碼片段</strong>（會過期）；例外是 prototype 產出、真的承載決策的片段。</li>
+      <li><strong><code>disable-model-invocation: true</code> 的 skill 由使用者點名才跑</strong>（<code>setup-matt-pocock-skills</code>、<code>wayfinder</code>、<code>grill-with-docs</code>、<code>to-spec</code>、<code>to-tickets</code>、<code>implement-spec</code>、<code>retro</code>），agent 不自己開。</li>
+    </ul>
+    <h3 id="h-4">本專案對這些 skill 的現況落差</h3>
+    <ul>
+      <li><strong><code>GLOSSARY.md</code> 與 <code>docs/adr/</code> 還不存在</strong>：不存在就靜默略過，等真的有術語被定出來再建（見 <code>docs/agents/domain.md</code>）。</li>
+      <li><strong>測試面是零</strong>：<code>app/src</code> 下只有 <code>main</code>，沒有 <code>test/</code> 與 <code>androidTest/</code>，<code>.\gradlew.bat test</code> 跑不到東西。要用 <code>tdd</code> 就得先立第一個接縫與測試目錄。</li>
+      <li><strong>部分被引用的同伴 skill 還不存在</strong>：<code>grill-with-docs</code> 與 <code>wayfinder</code> 要呼叫的<code>grilling</code>／<code>domain-modeling</code>／<code>research</code>／<code>prototype</code>、<code>tdd</code> 指向的 <code>codebase-design</code>，在 <code>.agents/</code>、<code>~/.agents/skills/</code>、<code>~/.claude/skills/</code> 都找不到。碰到就先告訴使用者缺哪一個，然後用對話把那一步直接做完（把題目問清楚、自己寫研究筆記）。</li>
+      <li><strong><code>.agents/</code> 還沒進版控</strong>（<code>git status</code> 顯示 <code>?? .agents/</code>）：要讓其他 session 或 CI 共用，得先 commit。</li>
+      <li><strong>兩個外掛 skill 不落在本專案</strong>：<code>frontend-design</code> 與 <code>ui-design</code> 針對 web／iOS（<code>ui-design</code> 的 <code>/uizze</code>子命令與 scripts 亦然），本專案 UI 是 Android Compose，只取其中的美感與文案原則；<code>kotlin-tooling-native-build-performance</code> 針對 KMP + iOS 的建置變慢，本專案 Android-only、無 KMP 與 iOS target。</li>
+    </ul>
+    <h2 id="h-5">Agent skills</h2>
+    <h3 id="h-6">Issue tracker</h3>
+    <p>Issues and specs live as GitHub issues, driven by the <code>gh</code> CLI. See <code>docs/agents/issue-tracker.md</code>.</p>
+    <h3 id="h-7">Domain docs</h3>
+    <p>Single-context: one <code>GLOSSARY.md</code> plus <code>docs/adr/</code> at the repo root. See <code>docs/agents/domain.md</code>.</p>
+    <h2 id="h-8">文件</h2>
+    <ul>
+      <li><code>docs/AGENTS.html</code>：本檔的網頁版快照（深色、左側目錄），給人讀的。<strong>改完本檔要重新產生它</strong>，它不會自己跟著更新。</li>
+    </ul>
+    <h2 id="h-9">版本組合（已實際建置驗證）</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>項目</th><th>版本</th><th>位置</th></tr></thead>
+      <tbody>
+      <tr><td>AGP</td><td>9.4.1</td><td><code>gradle/libs.versions.toml</code></td></tr>
+      <tr><td>Kotlin</td><td>2.4.21（Compose compiler plugin）</td><td>同上</td></tr>
+      <tr><td>Compose BOM</td><td>2026.09.00</td><td>同上</td></tr>
+      <tr><td>Gradle</td><td>9.6.0</td><td><code>gradle/wrapper/gradle-wrapper.properties</code></td></tr>
+      <tr><td>compileSdk / targetSdk</td><td>37</td><td><code>app/build.gradle.kts</code></td></tr>
+      <tr><td>minSdk</td><td>24</td><td>同上</td></tr>
+      <tr><td>JDK</td><td>17</td><td><code>compileOptions</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>其他相依：<code>androidx.activity:activity-compose:1.13.0</code>、<code>androidx.navigation:navigation-compose:2.10.2</code>。</p>
+    <h2 id="h-10">常用指令</h2>
+    <pre class="code" data-lang="powershell"><code>.\gradlew.bat assembleDebug        # 產出 app/build/outputs/apk/debug/app-debug.apk
+.\gradlew.bat installDebug         # 裝到已連接的裝置／emulator
+.\gradlew.bat lint                 # 靜態檢查
+.\gradlew.bat test                 # 目前沒有任何測試</code></pre>
+    <p><strong>一律用 <code>.\gradlew.bat</code>，不要用 PATH 上的 <code>gradle</code>。</strong> 見下方工具鏈說明。第一次建置會下載 Gradle 9.6.0 與全部相依，實測約 12 分鐘；之後約 30 秒。</p>
+    <p>驗證 SDK 路徑：</p>
+    <pre class="code" data-lang="powershell"><code>E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\debug\app-debug.apk</code></pre>
+    <h2 id="h-11">工具鏈陷阱（皆已實測）</h2>
+    <ul>
+      <li><strong>PATH 上的 <code>gradle</code> 是 8.1.1，完全不能用在本專案。</strong> AGP 9.4 要求 Gradle 9.6，用全域那顆會在 plugin resolution 就失敗。只能用 wrapper。</li>
+      <li><strong>JDK 分裂</strong>：<code>JAVA_HOME=C:\Java\jdk-17</code>，但 <code>PATH</code> 上的 <code>java</code> 是<code>C:\Java\jdk-25.0.4.7-hotspot</code>。Gradle 走 <code>JAVA_HOME</code>（實測 Gradle 9.6 跑在 JVM 17），所以 <strong><code>java -version</code> 不能用來驗證 build 用的 JDK</strong>。遇到不支援的 JDK 錯誤先懷疑這裡。</li>
+      <li><strong>SDK 路徑</strong>：<code>E:\Android\Sdk</code>，<code>ANDROID_HOME</code> 與 <code>ANDROID_SDK_ROOT</code> 都有設。<code>local.properties</code> 裡也寫了一份 <code>sdk.dir</code>。<strong><code>local.properties</code> 已被 gitignore，不要 commit。</strong></li>
+      <li><strong><code>adb</code> 不在 <code>PATH</code></strong>，要用的話走完整路徑 <code>E:\Android\Sdk\platform-tools\adb.exe</code>。</li>
+      <li>AGP 在第一次建置時會<strong>自動下載並安裝缺少的 SDK platform</strong>（本專案已讓它裝了 <code>android-37.0</code>）。這是正常行為，不是錯誤。</li>
+      <li><code>kotlinc</code> 未安裝，一切編譯都走 Gradle。</li>
+    </ul>
+    <h2 id="h-12">AGP 9 的兩個大坑</h2>
+    <p>1. <strong>不要套 <code>org.jetbrains.kotlin.android</code> plugin。</strong> AGP 9.0 起 Kotlin 是內建支援，套了會出現 <code>Cannot add extension with name 'kotlin'</code> 之類的錯誤。網路上幾乎所有教學都還在套 —— 不要照抄。（真的需要退回舊寫法才加 <code>android.builtInKotlin=false</code>，但 AGP 10 起失效。）2. <strong><code>androidx.compose.material:material-icons-core</code> / <code>-extended</code> 已停在 1.7.8</strong>（2025-02 後不再更新，也不再隨 Compose BOM 帶入）。本專案因此<strong>刻意不依賴 icon pack</strong>，底部導覽列目前只有文字標籤。之後要加 icon，請自己用 <code>ImageVector</code> 或 drawable 畫，不要把已停更的 artifact 加回來。</p>
+    <h2 id="h-13">架構</h2>
+    <ul>
+      <li>單一 <code>MainActivity</code>（<code>ui/theme/Theme.kt</code> 套用 Material 3 + 動態取色）</li>
+      <li><code>ui/JackCompassApp.kt</code>：<code>Scaffold</code> + 底部 <code>NavigationBar</code> + Navigation Compose <code>NavHost</code>，三個分頁由 private enum <code>ToolDestination</code> 驅動 —— <strong>新增工具在這裡加一筆即可</strong></li>
+      <li>三個畫面各自獨立：<code>ui/compass/</code>、<code>ui/level/</code>、<code>ui/gps/</code></li>
+      <li>原始碼放在 <strong><code>app/src/main/java/</code></strong>（AGP 內建 Kotlin 的預設路徑，同時相容 Java 檔案）</li>
+      <li>Manifest 已宣告定位權限，感測器為 <code>required="false"</code></li>
+    </ul>
+    <h3 id="h-14">預計要接的感測器</h3>
+    <ul>
+      <li>指南針 → <code>TYPE_ROTATION_VECTOR</code>（或 <code>TYPE_MAGNETIC_FIELD</code> + <code>TYPE_ACCELEROMETER</code>），需低通濾波與磁偏角處理</li>
+      <li>水平儀 → <code>TYPE_ACCELEROMETER</code>，預計分「水平儀」與「傾角儀」兩種模式</li>
+      <li>GPS → Fused Location 或 <code>LocationManager</code>，只在畫面上顯示數值（緯度／經度／海拔／速度），<strong>不含地圖</strong></li>
+    </ul>
+    <p><code>SensorManager</code> 的 callback 目前沒有封裝層，之後三個功能共用的那一層還沒寫。</p>
+    <h2 id="h-15">原型落差</h2>
+    <p>指 <code>spec/prototype.jpg</code>。該圖目前<strong>沒有實作</strong>，且與現況不一致，改動前先跟使用者確認：</p>
+    <ul>
+      <li>prototype 是 <strong>4 個分頁</strong>（Compass / Level / Map / Settings），現況是 3 個且無 Settings</li>
+      <li>prototype 把<strong>指南針與水平儀放在同一個畫面</strong>（中間是羅盤盤面），現況是兩個獨立分頁</li>
+      <li>prototype 的水平儀有 <strong>VERTICAL / HORIZONTAL</strong> 切換</li>
+      <li>prototype 在<strong>羅盤畫面上直接顯示</strong> <code>ELEVATION 124m · 24.8781°N, 121.0544°E</code></li>
+      <li>prototype 是深色為主 + 橘色指針 + 綠色氣泡，文案為英文；現況是跟隨系統取色 + 中文標籤</li>
+    </ul>
+    <h2 id="h-16">已知事項</h2>
+    <ul>
+      <li><code>ACCESS_FINE_LOCATION</code> 會讓 AGP 自動加入 <code>uses-feature android.hardware.location required="true"</code>，等於<strong>沒有定位硬體的裝置無法安裝</strong>。若要純羅盤裝置也能裝，需改成 <code>required="false"</code>。</li>
+      <li>專案沒有設定任何 branch / PR / 發布流程，沿用使用者預設。</li>
+    </ul>
+  </main>
+</div>
+
+<footer>
+  <p>由 <code>AGENTS.md</code> 產生的一次性快照 · 2026-10-18</p>
+  <p>原始檔更新後，這份要重新產生才算數。</p>
+</footer>
+</body>
+</html>
