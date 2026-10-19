@@ -257,7 +257,7 @@ footer p { margin: .25rem 0; }
     <circle cx="32" cy="32" r="1.3" fill="#0e1116"/>
   </svg>
   <div>
-    <p class="eyebrow">JackCompass · 指南針 / 水平儀 / GPS</p>
+    <p class="eyebrow">JackCompass · 指南針 / 水平儀</p>
     <h1>AGENTS.md</h1>
     <p class="standfirst">這個 repo 給 agent 的操作說明：目前現況、工具鏈陷阱，以及該走的工作流程。</p>
   </div>
@@ -282,8 +282,8 @@ footer p { margin: .25rem 0; }
   </nav>
   <main id="main">
     <h2 id="h-2">Repo 現況</h2>
-    <p>Kotlin + Jetpack Compose 寫的 Android 工具箱 App：<strong>指南針 / 水平儀 / GPS</strong>。<code>0e2f092</code> 當時只有 <code>README.md</code> 與 GitHub 的 Java 版 <code>.gitignore</code>；目前是一個可建置、可安裝的專案。</p>
-    <p><strong>指南針與水平儀已實作</strong>（感測器 → <code>sensor/</code> 的 Flow 層 → Compose <code>Canvas</code> 盤面）；<strong>GPS 仍是預留位置</strong>（顯示「尚未實作」）。畫面是 3 個分頁（Compass / Level / GPS）＋ 1 個設定頁（右上齒輪進入，目前只有語系切換）。</p>
+    <p>Kotlin + Jetpack Compose 寫的 Android 工具箱 App：<strong>指南針 / 水平儀</strong>，指南針並附經緯度（GPS）讀值。<code>0e2f092</code> 當時只有 <code>README.md</code> 與 GitHub 的 Java 版 <code>.gitignore</code>；目前是一個可建置、可安裝的專案。</p>
+    <p><strong>指南針、水平儀與經緯度都已實作</strong>（感測器／定位 → <code>sensor/</code> 的 Flow 層 → Compose <code>Canvas</code> 盤面）。畫面是 2 個分頁（指南針／水平儀）＋ 1 個設定頁（右上齒輪進入，目前只有語系切換）。經緯度<strong>不是</strong>獨立分頁：它是指南針畫面上、大字度數與盤面之間的一列小字，裝置沒有定位硬體時整列不出現。</p>
     <p><code>spec/prototype.jpg</code> 是設計參考圖，盤面已照它做出固定深色＋橘／綠的樣式；其餘出入見下方「原型落差」。</p>
     <h2 id="h-3">工作流程（<code>.agents/</code> 的 skill）</h2>
     <p><code>.agents/&lt;name&gt;/SKILL.md</code> 是每個 skill 的規則正本；<strong>本節只是導覽指標</strong>，說明什麼情況該去讀哪一份。規則要改就改 SKILL.md，不要在本檔放第二份。專案這層的 <code>.agents/&lt;name&gt;/</code> 不會出現在 skill 清單（<code>~/.agents/skills/&lt;name&gt;/</code> 才會），要用 <code>read</code> 開檔。</p>
@@ -321,7 +321,7 @@ footer p { margin: .25rem 0; }
     <h3 id="h-4">本專案對這些 skill 的現況落差</h3>
     <ul>
       <li><strong><code>GLOSSARY.md</code> 與 <code>docs/adr/</code> 還不存在</strong>：不存在就靜默略過，等真的有術語被定出來再建（見 <code>docs/agents/domain.md</code>）。</li>
-      <li><strong>測試只有一條接縫</strong>：<code>app/src/test/</code> 只有 <code>sensor/SensorMathTest.kt</code>（純函式，JVM 可跑，是 <code>tdd</code> 目前的唯一接縫）；<code>androidTest/</code> 還是空的，<code>sensor/</code> 的 Flow 層與 Compose 畫面都還沒測試。</li>
+      <li><strong>測試只有純函式這一條接縫</strong>：<code>app/src/test/</code> 只有 <code>sensor/</code> 底下的純函式測試（<code>SensorMathTest.kt</code>、<code>LocationDisplayTest.kt</code>；JVM 可跑，是 <code>tdd</code> 目前的唯一接縫）；專案<strong>沒有</strong> <code>androidTest/</code> source set，<code>sensor/</code> 的 Flow 層與 Compose 畫面都還沒測試。</li>
       <li><strong>部分被引用的同伴 skill 還不存在</strong>：<code>grill-with-docs</code> 與 <code>wayfinder</code> 要呼叫的 <code>grilling</code>／<code>domain-modeling</code>／<code>research</code>／<code>prototype</code>、<code>tdd</code> 指向的 <code>codebase-design</code>，在 <code>.agents/</code>、<code>~/.agents/skills/</code>、<code>~/.claude/skills/</code> 都找不到。碰到就先告訴使用者缺哪一個，然後用對話把那一步直接做完（把題目問清楚、自己寫研究筆記）。</li>
       <li><strong>2 個外掛 skill 不落在本專案</strong>：<code>frontend-design</code> 與 <code>ui-design</code> 針對 web／iOS（<code>ui-design</code> 的 <code>/uizze</code> 子命令與 scripts 亦然），本專案 UI 是 Android Compose，只取其中的美感與文案原則；<code>kotlin-tooling-native-build-performance</code> 針對 KMP + iOS 的建置變慢，本專案 Android-only、無 KMP 與 iOS target。</li>
     </ul>
@@ -352,7 +352,7 @@ footer p { margin: .25rem 0; }
     <pre class="code" data-lang="powershell"><code>.\gradlew.bat assembleDebug        # 產出 app/build/outputs/apk/debug/app-debug.apk
 .\gradlew.bat installDebug         # 裝到已連接的裝置／emulator
 .\gradlew.bat lint                 # 靜態檢查
-.\gradlew.bat test                 # JVM 單元測試（sensor/SensorMathTest.kt）</code></pre>
+.\gradlew.bat test                 # JVM 單元測試（sensor/ 的純函式）</code></pre>
     <p><strong>一律用 <code>.\gradlew.bat</code>，不要用 PATH 上的 <code>gradle</code>。</strong> 見下方工具鏈說明。第一次建置會下載 Gradle 9.6.0 與全部相依，實測約 12 分鐘；之後約 30 秒。</p>
     <p>驗證 SDK 路徑：</p>
     <pre class="code" data-lang="powershell"><code>E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\debug\app-debug.apk</code></pre>
@@ -370,31 +370,33 @@ footer p { margin: .25rem 0; }
     <h2 id="h-13">架構</h2>
     <ul>
       <li>單一 <code>MainActivity</code>（必須是 <code>AppCompatActivity</code>，<code>AppCompatDelegate</code> 的語系切換才生效）</li>
-      <li><code>ui/JackCompassApp.kt</code>：<code>Scaffold</code> + 底部 <code>NavigationBar</code> + Navigation Compose <code>NavHost</code>，3 個分頁由 private enum <code>ToolDestination</code> 驅動——<strong>新增工具在這裡加一筆即可</strong>；設定頁不在分頁列上，由右上齒輪進入</li>
-      <li>3 個工具畫面各自獨立：<code>ui/compass/</code>、<code>ui/level/</code>、<code>ui/gps/</code>；設定頁在 <code>ui/settings/</code></li>
-      <li><code>sensor/</code> 是三個功能共用的感測器層：<code>SensorMath.kt</code> 是純函式換算（無 Android 相依、JVM 可測），<code>SensorFlows.kt</code> 把 <code>SensorManager</code> 包成 <code>Flow</code>（進畫面才註冊、離開自動解除，濾波器每個收集者各一份）</li>
+      <li><code>ui/JackCompassApp.kt</code>：<code>Scaffold</code> + 底部 <code>NavigationBar</code> + Navigation Compose <code>NavHost</code>，2 個分頁由 private enum <code>ToolDestination</code> 驅動——<strong>新增工具在這裡加一筆即可</strong>；設定頁不在分頁列上，由右上齒輪進入</li>
+      <li>2 個工具畫面各自獨立：<code>ui/compass/</code>、<code>ui/level/</code>；設定頁在 <code>ui/settings/</code></li>
+      <li><code>sensor/</code> 是兩個功能共用的感測器與定位層，一律拆成「純函式 ＋ Flow 包裝」兩截：<code>SensorMath.kt</code>／<code>LocationMath.kt</code> 是純函式換算（無 Android 相依、JVM 可測），<code>SensorFlows.kt</code>（<code>SensorManager</code>）／<code>LocationFlow.kt</code>（<code>LocationManager</code>）把系統回呼包成 <code>Flow</code>——進畫面才註冊、離開自動解除，濾波器每個收集者各一份</li>
       <li><code>ui/theme/</code>：Material 3 + API 31 以上動態取色；盤面另用固定深色色板（<code>DialScreen</code>／<code>CompassOrange</code>／<code>LevelGreen</code>…），刻意不跟動態取色</li>
       <li>語系檔：<code>values/</code>（英文，預設）、<code>values-zh-rTW/</code>、<code>values-zh-rCN/</code>；系統 App 語言清單在 <code>res/xml/locales_config.xml</code></li>
       <li>原始碼放在 <strong><code>app/src/main/java/</code></strong>（AGP 內建 Kotlin 的預設路徑，同時相容 Java 檔案）</li>
-      <li>Manifest 已宣告定位權限與 <code>VIBRATE</code>（指南針刻度震動），加速計與磁力計為 <code>required="false"</code></li>
+      <li>Manifest 已宣告定位權限與 <code>VIBRATE</code>（指南針刻度震動）；加速計、指南針感測器與兩個 location <code>uses-feature</code> 全為 <code>required="false"</code></li>
     </ul>
-    <h3 id="h-14">感測器</h3>
+    <h3 id="h-14">感測器與定位</h3>
     <ul>
       <li>指南針（已實作）：<code>TYPE_ROTATION_VECTOR</code>，低通濾波後顯示磁北方位，<strong>未做磁偏角修正</strong></li>
       <li>水平儀（已實作）：<code>TYPE_ACCELEROMETER</code>，HORIZONTAL／VERTICAL 2 種模式</li>
-      <li>GPS（未實作）：預計 Fused Location 或 <code>LocationManager</code>，只顯示數值（緯度／經度／海拔／速度），<strong>不含地圖</strong></li>
+      <li>經緯度（已實作）：<code>LocationManager</code>（框架內建，刻意<strong>不</strong>加 Fused Location 相依），在大字度數與盤面之間顯示一列緯度＋經度（南／北、東／西依正負號換成方位字，小數點跟著語系走）；未核准權限或還沒定位時顯示 <code>--.----°</code> 佔位，裝置沒有定位硬體時整列隱藏。<strong>只有經緯度，不含海拔與速度，也沒有地圖</strong></li>
     </ul>
     <h2 id="h-15">原型落差</h2>
     <p>指 <code>spec/prototype.jpg</code>。盤面樣式（固定深色＋橘／綠）與水平儀的 HORIZONTAL / VERTICAL 切換已照圖實作；以下是還對不上的地方，改動前先跟使用者確認：</p>
     <ul>
-      <li>prototype 是 <strong>4 個分頁</strong>（Compass / Level / Map / Settings），現況是 3 個分頁＋由齒輪進入的設定頁，且沒有 Map</li>
+      <li>prototype 是 <strong>4 個分頁</strong>（Compass / Level / Map / Settings），現況是 2 個分頁＋由齒輪進入的設定頁，且沒有 Map</li>
       <li>prototype 把<strong>指南針與水平儀放在同一個畫面</strong>（中間是羅盤盤面），現況是 2 個獨立分頁</li>
-      <li>prototype 在<strong>羅盤畫面上直接顯示</strong> <code>ELEVATION 124m · 24.8781°N, 121.0544°E</code>，現況的羅盤畫面沒有這些數值</li>
+      <li>prototype 在<strong>羅盤畫面上直接顯示</strong> <code>ELEVATION 124m · 24.8781°N, 121.0544°E</code>；現況的羅盤畫面有經緯度那一列（照語系排版，不是 prototype 的英文格式），但<strong>沒有海拔</strong></li>
       <li>prototype 的文案是英文；現況預設英文，另外備有 zh-TW／zh-CN 語系檔</li>
     </ul>
     <h2 id="h-16">已知事項</h2>
     <ul>
-      <li><code>ACCESS_FINE_LOCATION</code> 會讓 AGP 自動加入 <code>uses-feature android.hardware.location required="true"</code>（已用 <code>aapt2 dump badging app\build\outputs\apk\debug\app-debug.apk</code> 驗證產出的 APK），等於<strong>沒有定位硬體的裝置無法安裝</strong>。要讓純羅盤裝置也能裝，需在 Manifest 明寫 <code>required="false"</code>。</li>
+      <li><code>ACCESS_FINE_LOCATION</code> 會讓 AGP 自動加入 <code>uses-feature android.hardware.location required="true"</code>，等於<strong>沒有定位硬體的裝置無法安裝</strong>、「無定位就隱藏經緯度」那條路徑永遠走不到。Manifest 已明寫兩個 location <code>uses-feature</code> 為 <code>required="false"</code> 解掉（用 <code>aapt2 dump badging app\build\outputs\apk\debug\app-debug.apk</code> 驗證產出是 <code>uses-feature-not-required</code>）。</li>
+      <li><code>android.location.LocationListener</code> 的 <code>onStatusChanged</code>／<code>onProviderEnabled</code>／<code>onProviderDisabled</code> 到 API 30 才變成 default 方法。Kotlin 用 lambda／SAM 轉換只會實作 <code>onLocationChanged</code>，在 API 24–29 上框架一回呼就 <code>AbstractMethodError</code>。<code>LocationFlow.kt</code> 因此用明確的 <code>object : LocationListener</code> 把四個方法全部補齊——<strong>這不是冗餘的程式碼，不要精簡成 lambda</strong>。</li>
+      <li><code>.\gradlew.bat lint</code> 目前會失敗，3 個 error 都是經緯度之前就存在的問題、尚未處理：指南針刻度震動用的 <code>VibrationEffect.createOneShot</code>／<code>Vibrator.vibrate</code> 要 API 26，而 minSdk 是 24（API 24/25 上按到震動會當），另外 <code>app_name</code> 未翻譯成 zh。</li>
       <li>專案沒有設定任何 branch / PR / 發布流程，沿用使用者預設。</li>
     </ul>
   </main>

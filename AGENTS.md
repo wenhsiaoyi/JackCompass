@@ -2,11 +2,12 @@
 
 ## Repo 現況
 
-Kotlin + Jetpack Compose 寫的 Android 工具箱 App：**指南針 / 水平儀 / GPS**。
+Kotlin + Jetpack Compose 寫的 Android 工具箱 App：**指南針 / 水平儀**，指南針並附經緯度（GPS）讀值。
 `0e2f092` 當時只有 `README.md` 與 GitHub 的 Java 版 `.gitignore`；目前是一個可建置、可安裝的專案。
 
-**指南針與水平儀已實作**（感測器 → `sensor/` 的 Flow 層 → Compose `Canvas` 盤面）；**GPS 仍是預留位置**（顯示「尚未實作」）。
-畫面是 3 個分頁（Compass / Level / GPS）＋ 1 個設定頁（右上齒輪進入，目前只有語系切換）。
+**指南針、水平儀與經緯度都已實作**（感測器／定位 → `sensor/` 的 Flow 層 → Compose `Canvas` 盤面）。
+畫面是 2 個分頁（指南針／水平儀）＋ 1 個設定頁（右上齒輪進入，目前只有語系切換）。
+經緯度**不是**獨立分頁：它是指南針畫面上、大字度數與盤面之間的一列小字，裝置沒有定位硬體時整列不出現。
 `spec/prototype.jpg` 是設計參考圖，盤面已照它做出固定深色＋橘／綠的樣式；其餘出入見下方「原型落差」。
 
 ## 工作流程（`.agents/` 的 skill）
@@ -55,8 +56,9 @@ Kotlin + Jetpack Compose 寫的 Android 工具箱 App：**指南針 / 水平儀 
 
 - **`GLOSSARY.md` 與 `docs/adr/` 還不存在**：不存在就靜默略過，等真的有術語被定出來再建
   （見 `docs/agents/domain.md`）。
-- **測試只有一條接縫**：`app/src/test/` 只有 `sensor/SensorMathTest.kt`（純函式，JVM 可跑，是 `tdd` 目前的唯一接縫）；
-  `androidTest/` 還是空的，`sensor/` 的 Flow 層與 Compose 畫面都還沒測試。
+- **測試只有純函式這一條接縫**：`app/src/test/` 只有 `sensor/` 底下的純函式測試（`SensorMathTest.kt`、
+  `LocationDisplayTest.kt`；JVM 可跑，是 `tdd` 目前的唯一接縫）；
+  專案**沒有** `androidTest/` source set，`sensor/` 的 Flow 層與 Compose 畫面都還沒測試。
 - **部分被引用的同伴 skill 還不存在**：`grill-with-docs` 與 `wayfinder` 要呼叫的
   `grilling`／`domain-modeling`／`research`／`prototype`、`tdd` 指向的 `codebase-design`，在 `.agents/`、
   `~/.agents/skills/`、`~/.claude/skills/` 都找不到。碰到就先告訴使用者缺哪一個，
@@ -100,7 +102,7 @@ Single-context: one `GLOSSARY.md` plus `docs/adr/` at the repo root. See `docs/a
 .\gradlew.bat assembleDebug        # 產出 app/build/outputs/apk/debug/app-debug.apk
 .\gradlew.bat installDebug         # 裝到已連接的裝置／emulator
 .\gradlew.bat lint                 # 靜態檢查
-.\gradlew.bat test                 # JVM 單元測試（sensor/SensorMathTest.kt）
+.\gradlew.bat test                 # JVM 單元測試（sensor/ 的純函式）
 ```
 
 **一律用 `.\gradlew.bat`，不要用 PATH 上的 `gradle`。** 見下方工具鏈說明。
@@ -141,35 +143,50 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
 
 - 單一 `MainActivity`（必須是 `AppCompatActivity`，`AppCompatDelegate` 的語系切換才生效）
 - `ui/JackCompassApp.kt`：`Scaffold` + 底部 `NavigationBar` + Navigation Compose `NavHost`，
-  3 個分頁由 private enum `ToolDestination` 驅動——**新增工具在這裡加一筆即可**；
+  2 個分頁由 private enum `ToolDestination` 驅動——**新增工具在這裡加一筆即可**；
   設定頁不在分頁列上，由右上齒輪進入
-- 3 個工具畫面各自獨立：`ui/compass/`、`ui/level/`、`ui/gps/`；設定頁在 `ui/settings/`
-- `sensor/` 是三個功能共用的感測器層：`SensorMath.kt` 是純函式換算（無 Android 相依、JVM 可測），
-  `SensorFlows.kt` 把 `SensorManager` 包成 `Flow`（進畫面才註冊、離開自動解除，濾波器每個收集者各一份）
+- 2 個工具畫面各自獨立：`ui/compass/`、`ui/level/`；設定頁在 `ui/settings/`
+- `sensor/` 是兩個功能共用的感測器與定位層，一律拆成「純函式 ＋ Flow 包裝」兩截：
+  `SensorMath.kt`／`LocationMath.kt` 是純函式換算（無 Android 相依、JVM 可測），
+  `SensorFlows.kt`（`SensorManager`）／`LocationFlow.kt`（`LocationManager`）把系統回呼包成 `Flow`
+  ——進畫面才註冊、離開自動解除，濾波器每個收集者各一份
 - `ui/theme/`：Material 3 + API 31 以上動態取色；盤面另用固定深色色板（`DialScreen`／`CompassOrange`／`LevelGreen`…），刻意不跟動態取色
 - 語系檔：`values/`（英文，預設）、`values-zh-rTW/`、`values-zh-rCN/`；系統 App 語言清單在 `res/xml/locales_config.xml`
 - 原始碼放在 **`app/src/main/java/`**（AGP 內建 Kotlin 的預設路徑，同時相容 Java 檔案）
-- Manifest 已宣告定位權限與 `VIBRATE`（指南針刻度震動），加速計與磁力計為 `required="false"`
+- Manifest 已宣告定位權限與 `VIBRATE`（指南針刻度震動）；加速計、指南針感測器與兩個 location
+  `uses-feature` 全為 `required="false"`
 
-### 感測器
+### 感測器與定位
 
 - 指南針（已實作）：`TYPE_ROTATION_VECTOR`，低通濾波後顯示磁北方位，**未做磁偏角修正**
 - 水平儀（已實作）：`TYPE_ACCELEROMETER`，HORIZONTAL／VERTICAL 2 種模式
-- GPS（未實作）：預計 Fused Location 或 `LocationManager`，只顯示數值（緯度／經度／海拔／速度），**不含地圖**
+- 經緯度（已實作）：`LocationManager`（框架內建，刻意**不**加 Fused Location 相依），
+  在大字度數與盤面之間顯示一列緯度＋經度（南／北、東／西依正負號換成方位字，小數點跟著語系走）；
+  未核准權限或還沒定位時顯示 `--.----°` 佔位，裝置沒有定位硬體時整列隱藏。
+  **只有經緯度，不含海拔與速度，也沒有地圖**
 
 ## 原型落差
 
 指 `spec/prototype.jpg`。盤面樣式（固定深色＋橘／綠）與水平儀的 HORIZONTAL / VERTICAL 切換已照圖實作；
 以下是還對不上的地方，改動前先跟使用者確認：
 
-- prototype 是 **4 個分頁**（Compass / Level / Map / Settings），現況是 3 個分頁＋由齒輪進入的設定頁，且沒有 Map
+- prototype 是 **4 個分頁**（Compass / Level / Map / Settings），現況是 2 個分頁＋由齒輪進入的設定頁，且沒有 Map
 - prototype 把**指南針與水平儀放在同一個畫面**（中間是羅盤盤面），現況是 2 個獨立分頁
-- prototype 在**羅盤畫面上直接顯示** `ELEVATION 124m · 24.8781°N, 121.0544°E`，現況的羅盤畫面沒有這些數值
+- prototype 在**羅盤畫面上直接顯示** `ELEVATION 124m · 24.8781°N, 121.0544°E`；
+  現況的羅盤畫面有經緯度那一列（照語系排版，不是 prototype 的英文格式），但**沒有海拔**
 - prototype 的文案是英文；現況預設英文，另外備有 zh-TW／zh-CN 語系檔
 
 ## 已知事項
 
-- `ACCESS_FINE_LOCATION` 會讓 AGP 自動加入 `uses-feature android.hardware.location required="true"`
-  （已用 `aapt2 dump badging app\build\outputs\apk\debug\app-debug.apk` 驗證產出的 APK），
-  等於**沒有定位硬體的裝置無法安裝**。要讓純羅盤裝置也能裝，需在 Manifest 明寫 `required="false"`。
+- `ACCESS_FINE_LOCATION` 會讓 AGP 自動加入 `uses-feature android.hardware.location required="true"`，
+  等於**沒有定位硬體的裝置無法安裝**、「無定位就隱藏經緯度」那條路徑永遠走不到。
+  Manifest 已明寫兩個 location `uses-feature` 為 `required="false"` 解掉
+  （用 `aapt2 dump badging app\build\outputs\apk\debug\app-debug.apk` 驗證產出是 `uses-feature-not-required`）。
+- `android.location.LocationListener` 的 `onStatusChanged`／`onProviderEnabled`／`onProviderDisabled`
+  到 API 30 才變成 default 方法。Kotlin 用 lambda／SAM 轉換只會實作 `onLocationChanged`，
+  在 API 24–29 上框架一回呼就 `AbstractMethodError`。`LocationFlow.kt` 因此用明確的
+  `object : LocationListener` 把四個方法全部補齊——**這不是冗餘的程式碼，不要精簡成 lambda**。
+- `.\gradlew.bat lint` 目前會失敗，3 個 error 都是經緯度之前就存在的問題、尚未處理：
+  指南針刻度震動用的 `VibrationEffect.createOneShot`／`Vibrator.vibrate` 要 API 26，而 minSdk 是 24
+  （API 24/25 上按到震動會當），另外 `app_name` 未翻譯成 zh。
 - 專案沒有設定任何 branch / PR / 發布流程，沿用使用者預設。
