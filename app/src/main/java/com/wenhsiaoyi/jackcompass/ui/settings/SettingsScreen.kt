@@ -33,7 +33,7 @@ import com.wenhsiaoyi.jackcompass.ui.theme.LevelTube
 private enum class AppLanguage(val tag: String, val label: String) {
     English("en", "English"),
     ChineseSimplified("zh-CN", "简体中文"),
-    ChineseTraditional("zh-TW", "繁体中文"),
+    ChineseTraditional("zh-TW", "繁體中文"),
 }
 
 /**
