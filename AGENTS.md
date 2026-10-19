@@ -2,11 +2,12 @@
 
 ## Repo 現況
 
-Kotlin + Jetpack Compose 寫的 Android 工具箱 app：**指南針 / 水平儀 / GPS**。
-`0e2f092` 當時只有 `README.md` 與 GitHub 的 Java 版 `.gitignore`；目前已有一份可建置的空專案。
+Kotlin + Jetpack Compose 寫的 Android 工具箱 App：**指南針 / 水平儀 / GPS**。
+`0e2f092` 當時只有 `README.md` 與 GitHub 的 Java 版 `.gitignore`；目前是一個可建置、可安裝的專案。
 
-**三個畫面目前都只是佔位符**（顯示「尚未實作」），沒有任何感測器或定位的實作。
-`spec/prototype.jpg` 是設計參考圖，**尚未實作**，而且它與目前的 scaffold 有出入（見下方「原型落差」）。
+**指南針與水平儀已實作**（感測器 → `sensor/` 的 Flow 層 → Compose `Canvas` 盤面）；**GPS 仍是預留位置**（顯示「尚未實作」）。
+畫面是 3 個分頁（Compass / Level / GPS）＋ 1 個設定頁（右上齒輪進入，目前只有語系切換）。
+`spec/prototype.jpg` 是設計參考圖，盤面已照它做出固定深色＋橘／綠的樣式；其餘出入見下方「原型落差」。
 
 ## 工作流程（`.agents/` 的 skill）
 
@@ -30,7 +31,7 @@ Kotlin + Jetpack Compose 寫的 Android 工具箱 app：**指南針 / 水平儀 
 | 工程大到一個 session 吃不完：在 tracker 上畫「地圖」，一次解一張決策 ticket | `wayfinder` |
 | 對話已經足夠，要合成規格（不訪談）並發到 tracker | `to-spec` |
 | 規格要切成可動工的 tracer bullet ticket，標好 blocking edge | `to-tickets` |
-| 規格與 ticket 都齊了，要落地到 integration branch | `implement-spec` |
+| 規格與 ticket 都齊了，要併入 integration branch | `implement-spec` |
 | 每個 ticket 的實作方式：紅 → 綠 | `tdd` |
 | 收工前／合併前的兩軸審查（Standards / Spec） | `code-review` |
 | 要寫 PR body | `pr` |
@@ -43,6 +44,9 @@ Kotlin + Jetpack Compose 寫的 Android 工具箱 app：**指南針 / 水平儀 
 - **前線（frontier）**：ticket 是 task graph、不是步驟清單；只拿 blockers 全清的那些，其餘等。
 - **指標（context pointer）**：subagent 之間靠 spec、ticket、研究筆記、commit 的指標溝通，不重述內容。
 - **證據先於宣稱**：講「完成／會過」之前，先把指令跑過，並貼出實際輸出。
+- **中文用詞**：本 repo 的台灣正體中文（本檔、`README.md`、`values-zh-rTW/` 文案、程式碼註解）以
+  `.agents/tw-translate/` 的詞彙表與風格指南為準；改中文之前先讀 `SKILL.md`，寫完把動過的句子掃過詞彙表。
+  （`values-zh-rCN/` 是刻意的簡體語系檔，不在這條規則內。）
 - **規格與 ticket 不放檔案路徑與程式碼片段**（會過期）；例外是 prototype 產出、真的承載決策的片段。
 - **`disable-model-invocation: true` 的 skill 由使用者點名才跑**（`setup-matt-pocock-skills`、`wayfinder`、
   `grill-with-docs`、`to-spec`、`to-tickets`、`implement-spec`、`retro`），agent 不自己開。
@@ -51,14 +55,13 @@ Kotlin + Jetpack Compose 寫的 Android 工具箱 app：**指南針 / 水平儀 
 
 - **`GLOSSARY.md` 與 `docs/adr/` 還不存在**：不存在就靜默略過，等真的有術語被定出來再建
   （見 `docs/agents/domain.md`）。
-- **測試面是零**：`app/src` 下只有 `main`，沒有 `test/` 與 `androidTest/`，`.\gradlew.bat test` 跑不到東西。
-  要用 `tdd` 就得先立第一個接縫與測試目錄。
+- **測試只有一條接縫**：`app/src/test/` 只有 `sensor/SensorMathTest.kt`（純函式，JVM 可跑，是 `tdd` 目前的唯一接縫）；
+  `androidTest/` 還是空的，`sensor/` 的 Flow 層與 Compose 畫面都還沒測試。
 - **部分被引用的同伴 skill 還不存在**：`grill-with-docs` 與 `wayfinder` 要呼叫的
   `grilling`／`domain-modeling`／`research`／`prototype`、`tdd` 指向的 `codebase-design`，在 `.agents/`、
   `~/.agents/skills/`、`~/.claude/skills/` 都找不到。碰到就先告訴使用者缺哪一個，
   然後用對話把那一步直接做完（把題目問清楚、自己寫研究筆記）。
-- **`.agents/` 還沒進版控**（`git status` 顯示 `?? .agents/`）：要讓其他 session 或 CI 共用，得先 commit。
-- **兩個外掛 skill 不落在本專案**：`frontend-design` 與 `ui-design` 針對 web／iOS（`ui-design` 的 `/uizze`
+- **2 個外掛 skill 不落在本專案**：`frontend-design` 與 `ui-design` 針對 web／iOS（`ui-design` 的 `/uizze`
   子命令與 scripts 亦然），本專案 UI 是 Android Compose，只取其中的美感與文案原則；
   `kotlin-tooling-native-build-performance` 針對 KMP + iOS 的建置變慢，本專案 Android-only、無 KMP 與 iOS target。
 
@@ -88,7 +91,8 @@ Single-context: one `GLOSSARY.md` plus `docs/adr/` at the repo root. See `docs/a
 | minSdk | 24 | 同上 |
 | JDK | 17 | `compileOptions` |
 
-其他相依：`androidx.activity:activity-compose:1.13.0`、`androidx.navigation:navigation-compose:2.10.2`。
+其他相依套件：`androidx.activity:activity-compose:1.13.0`、`androidx.navigation:navigation-compose:2.10.2`、
+`androidx.appcompat:appcompat:1.8.0`（語系切換）、`kotlinx-coroutines-android:1.10.2`；測試用 `junit:4.13.2`。
 
 ## 常用指令
 
@@ -96,7 +100,7 @@ Single-context: one `GLOSSARY.md` plus `docs/adr/` at the repo root. See `docs/a
 .\gradlew.bat assembleDebug        # 產出 app/build/outputs/apk/debug/app-debug.apk
 .\gradlew.bat installDebug         # 裝到已連接的裝置／emulator
 .\gradlew.bat lint                 # 靜態檢查
-.\gradlew.bat test                 # 目前沒有任何測試
+.\gradlew.bat test                 # JVM 單元測試（sensor/SensorMathTest.kt）
 ```
 
 **一律用 `.\gradlew.bat`，不要用 PATH 上的 `gradle`。** 見下方工具鏈說明。
@@ -122,46 +126,50 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
   （本專案已讓它裝了 `android-37.0`）。這是正常行為，不是錯誤。
 - `kotlinc` 未安裝，一切編譯都走 Gradle。
 
-## AGP 9 的兩個大坑
+## AGP 9 的 2 個大地雷
 
 1. **不要套 `org.jetbrains.kotlin.android` plugin。** AGP 9.0 起 Kotlin 是內建支援，
    套了會出現 `Cannot add extension with name 'kotlin'` 之類的錯誤。
-   網路上幾乎所有教學都還在套 —— 不要照抄。
+   網路上幾乎所有教學都還在套——不要照抄。
    （真的需要退回舊寫法才加 `android.builtInKotlin=false`，但 AGP 10 起失效。）
 2. **`androidx.compose.material:material-icons-core` / `-extended` 已停在 1.7.8**
    （2025-02 後不再更新，也不再隨 Compose BOM 帶入）。
    本專案因此**刻意不依賴 icon pack**，底部導覽列目前只有文字標籤。
-   之後要加 icon，請自己用 `ImageVector` 或 drawable 畫，不要把已停更的 artifact 加回來。
+   之後要加 icon，請自己用 `ImageVector` 或 drawable 畫，不要把已停止更新的 artifact 加回來。
 
 ## 架構
 
-- 單一 `MainActivity`（`ui/theme/Theme.kt` 套用 Material 3 + 動態取色）
+- 單一 `MainActivity`（必須是 `AppCompatActivity`，`AppCompatDelegate` 的語系切換才生效）
 - `ui/JackCompassApp.kt`：`Scaffold` + 底部 `NavigationBar` + Navigation Compose `NavHost`，
-  三個分頁由 private enum `ToolDestination` 驅動 —— **新增工具在這裡加一筆即可**
-- 三個畫面各自獨立：`ui/compass/`、`ui/level/`、`ui/gps/`
+  3 個分頁由 private enum `ToolDestination` 驅動——**新增工具在這裡加一筆即可**；
+  設定頁不在分頁列上，由右上齒輪進入
+- 3 個工具畫面各自獨立：`ui/compass/`、`ui/level/`、`ui/gps/`；設定頁在 `ui/settings/`
+- `sensor/` 是三個功能共用的感測器層：`SensorMath.kt` 是純函式換算（無 Android 相依、JVM 可測），
+  `SensorFlows.kt` 把 `SensorManager` 包成 `Flow`（進畫面才註冊、離開自動解除，濾波器每個收集者各一份）
+- `ui/theme/`：Material 3 + API 31 以上動態取色；盤面另用固定深色色板（`DialScreen`／`CompassOrange`／`LevelGreen`…），刻意不跟動態取色
+- 語系檔：`values/`（英文，預設）、`values-zh-rTW/`、`values-zh-rCN/`；系統 App 語言清單在 `res/xml/locales_config.xml`
 - 原始碼放在 **`app/src/main/java/`**（AGP 內建 Kotlin 的預設路徑，同時相容 Java 檔案）
-- Manifest 已宣告定位權限，感測器為 `required="false"`
+- Manifest 已宣告定位權限與 `VIBRATE`（指南針刻度震動），加速計與磁力計為 `required="false"`
 
-### 預計要接的感測器
+### 感測器
 
-- 指南針 → `TYPE_ROTATION_VECTOR`（或 `TYPE_MAGNETIC_FIELD` + `TYPE_ACCELEROMETER`），需低通濾波與磁偏角處理
-- 水平儀 → `TYPE_ACCELEROMETER`，預計分「水平儀」與「傾角儀」兩種模式
-- GPS → Fused Location 或 `LocationManager`，只在畫面上顯示數值（緯度／經度／海拔／速度），**不含地圖**
-
-`SensorManager` 的 callback 目前沒有封裝層，之後三個功能共用的那一層還沒寫。
+- 指南針（已實作）：`TYPE_ROTATION_VECTOR`，低通濾波後顯示磁北方位，**未做磁偏角修正**
+- 水平儀（已實作）：`TYPE_ACCELEROMETER`，HORIZONTAL／VERTICAL 2 種模式
+- GPS（未實作）：預計 Fused Location 或 `LocationManager`，只顯示數值（緯度／經度／海拔／速度），**不含地圖**
 
 ## 原型落差
 
-指 `spec/prototype.jpg`。該圖目前**沒有實作**，且與現況不一致，改動前先跟使用者確認：
+指 `spec/prototype.jpg`。盤面樣式（固定深色＋橘／綠）與水平儀的 HORIZONTAL / VERTICAL 切換已照圖實作；
+以下是還對不上的地方，改動前先跟使用者確認：
 
-- prototype 是 **4 個分頁**（Compass / Level / Map / Settings），現況是 3 個且無 Settings
-- prototype 把**指南針與水平儀放在同一個畫面**（中間是羅盤盤面），現況是兩個獨立分頁
-- prototype 的水平儀有 **VERTICAL / HORIZONTAL** 切換
-- prototype 在**羅盤畫面上直接顯示** `ELEVATION 124m · 24.8781°N, 121.0544°E`
-- prototype 是深色為主 + 橘色指針 + 綠色氣泡，文案為英文；現況是跟隨系統取色 + 中文標籤
+- prototype 是 **4 個分頁**（Compass / Level / Map / Settings），現況是 3 個分頁＋由齒輪進入的設定頁，且沒有 Map
+- prototype 把**指南針與水平儀放在同一個畫面**（中間是羅盤盤面），現況是 2 個獨立分頁
+- prototype 在**羅盤畫面上直接顯示** `ELEVATION 124m · 24.8781°N, 121.0544°E`，現況的羅盤畫面沒有這些數值
+- prototype 的文案是英文；現況預設英文，另外備有 zh-TW／zh-CN 語系檔
 
 ## 已知事項
 
-- `ACCESS_FINE_LOCATION` 會讓 AGP 自動加入 `uses-feature android.hardware.location required="true"`，
-  等於**沒有定位硬體的裝置無法安裝**。若要純羅盤裝置也能裝，需改成 `required="false"`。
+- `ACCESS_FINE_LOCATION` 會讓 AGP 自動加入 `uses-feature android.hardware.location required="true"`
+  （已用 `aapt2 dump badging app\build\outputs\apk\debug\app-debug.apk` 驗證產出的 APK），
+  等於**沒有定位硬體的裝置無法安裝**。要讓純羅盤裝置也能裝，需在 Manifest 明寫 `required="false"`。
 - 專案沒有設定任何 branch / PR / 發布流程，沿用使用者預設。

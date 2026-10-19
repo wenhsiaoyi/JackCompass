@@ -274,7 +274,7 @@ footer p { margin: .25rem 0; }
       <li><a href="#h-9">版本組合（已實際建置驗證）</a></li>
       <li><a href="#h-10">常用指令</a></li>
       <li><a href="#h-11">工具鏈陷阱（皆已實測）</a></li>
-      <li><a href="#h-12">AGP 9 的兩個大坑</a></li>
+      <li><a href="#h-12">AGP 9 的 2 個大地雷</a></li>
       <li><a href="#h-13">架構</a></li>
       <li><a href="#h-15">原型落差</a></li>
       <li><a href="#h-16">已知事項</a></li>
@@ -282,8 +282,9 @@ footer p { margin: .25rem 0; }
   </nav>
   <main id="main">
     <h2 id="h-2">Repo 現況</h2>
-    <p>Kotlin + Jetpack Compose 寫的 Android 工具箱 app：<strong>指南針 / 水平儀 / GPS</strong>。<code>0e2f092</code> 當時只有 <code>README.md</code> 與 GitHub 的 Java 版 <code>.gitignore</code>；目前已有一份可建置的空專案。</p>
-    <p><strong>三個畫面目前都只是佔位符</strong>（顯示「尚未實作」），沒有任何感測器或定位的實作。<code>spec/prototype.jpg</code> 是設計參考圖，<strong>尚未實作</strong>，而且它與目前的 scaffold 有出入（見下方「原型落差」）。</p>
+    <p>Kotlin + Jetpack Compose 寫的 Android 工具箱 App：<strong>指南針 / 水平儀 / GPS</strong>。<code>0e2f092</code> 當時只有 <code>README.md</code> 與 GitHub 的 Java 版 <code>.gitignore</code>；目前是一個可建置、可安裝的專案。</p>
+    <p><strong>指南針與水平儀已實作</strong>（感測器 → <code>sensor/</code> 的 Flow 層 → Compose <code>Canvas</code> 盤面）；<strong>GPS 仍是預留位置</strong>（顯示「尚未實作」）。畫面是 3 個分頁（Compass / Level / GPS）＋ 1 個設定頁（右上齒輪進入，目前只有語系切換）。</p>
+    <p><code>spec/prototype.jpg</code> 是設計參考圖，盤面已照它做出固定深色＋橘／綠的樣式；其餘出入見下方「原型落差」。</p>
     <h2 id="h-3">工作流程（<code>.agents/</code> 的 skill）</h2>
     <p><code>.agents/&lt;name&gt;/SKILL.md</code> 是每個 skill 的規則正本；<strong>本節只是導覽指標</strong>，說明什麼情況該去讀哪一份。規則要改就改 SKILL.md，不要在本檔放第二份。專案這層的 <code>.agents/&lt;name&gt;/</code> 不會出現在 skill 清單（<code>~/.agents/skills/&lt;name&gt;/</code> 才會），要用 <code>read</code> 開檔。</p>
     <p>主線：</p>
@@ -299,7 +300,7 @@ footer p { margin: .25rem 0; }
       <tr><td>工程大到一個 session 吃不完：在 tracker 上畫「地圖」，一次解一張決策 ticket</td><td><code>wayfinder</code></td></tr>
       <tr><td>對話已經足夠，要合成規格（不訪談）並發到 tracker</td><td><code>to-spec</code></td></tr>
       <tr><td>規格要切成可動工的 tracer bullet ticket，標好 blocking edge</td><td><code>to-tickets</code></td></tr>
-      <tr><td>規格與 ticket 都齊了，要落地到 integration branch</td><td><code>implement-spec</code></td></tr>
+      <tr><td>規格與 ticket 都齊了，要併入 integration branch</td><td><code>implement-spec</code></td></tr>
       <tr><td>每個 ticket 的實作方式：紅 → 綠</td><td><code>tdd</code></td></tr>
       <tr><td>收工前／合併前的兩軸審查（Standards / Spec）</td><td><code>code-review</code></td></tr>
       <tr><td>要寫 PR body</td><td><code>pr</code></td></tr>
@@ -313,16 +314,16 @@ footer p { margin: .25rem 0; }
       <li><strong>前線（frontier）</strong>：ticket 是 task graph、不是步驟清單；只拿 blockers 全清的那些，其餘等。</li>
       <li><strong>指標（context pointer）</strong>：subagent 之間靠 spec、ticket、研究筆記、commit 的指標溝通，不重述內容。</li>
       <li><strong>證據先於宣稱</strong>：講「完成／會過」之前，先把指令跑過，並貼出實際輸出。</li>
+      <li><strong>中文用詞</strong>：本 repo 的台灣正體中文（本檔、<code>README.md</code>、<code>values-zh-rTW/</code> 文案、程式碼註解）以 <code>.agents/tw-translate/</code> 的詞彙表與風格指南為準；改中文之前先讀 <code>SKILL.md</code>，寫完把動過的句子掃過詞彙表。（<code>values-zh-rCN/</code> 是刻意的簡體語系檔，不在這條規則內。）</li>
       <li><strong>規格與 ticket 不放檔案路徑與程式碼片段</strong>（會過期）；例外是 prototype 產出、真的承載決策的片段。</li>
       <li><strong><code>disable-model-invocation: true</code> 的 skill 由使用者點名才跑</strong>（<code>setup-matt-pocock-skills</code>、<code>wayfinder</code>、<code>grill-with-docs</code>、<code>to-spec</code>、<code>to-tickets</code>、<code>implement-spec</code>、<code>retro</code>），agent 不自己開。</li>
     </ul>
     <h3 id="h-4">本專案對這些 skill 的現況落差</h3>
     <ul>
       <li><strong><code>GLOSSARY.md</code> 與 <code>docs/adr/</code> 還不存在</strong>：不存在就靜默略過，等真的有術語被定出來再建（見 <code>docs/agents/domain.md</code>）。</li>
-      <li><strong>測試面是零</strong>：<code>app/src</code> 下只有 <code>main</code>，沒有 <code>test/</code> 與 <code>androidTest/</code>，<code>.\gradlew.bat test</code> 跑不到東西。要用 <code>tdd</code> 就得先立第一個接縫與測試目錄。</li>
-      <li><strong>部分被引用的同伴 skill 還不存在</strong>：<code>grill-with-docs</code> 與 <code>wayfinder</code> 要呼叫的<code>grilling</code>／<code>domain-modeling</code>／<code>research</code>／<code>prototype</code>、<code>tdd</code> 指向的 <code>codebase-design</code>，在 <code>.agents/</code>、<code>~/.agents/skills/</code>、<code>~/.claude/skills/</code> 都找不到。碰到就先告訴使用者缺哪一個，然後用對話把那一步直接做完（把題目問清楚、自己寫研究筆記）。</li>
-      <li><strong><code>.agents/</code> 還沒進版控</strong>（<code>git status</code> 顯示 <code>?? .agents/</code>）：要讓其他 session 或 CI 共用，得先 commit。</li>
-      <li><strong>兩個外掛 skill 不落在本專案</strong>：<code>frontend-design</code> 與 <code>ui-design</code> 針對 web／iOS（<code>ui-design</code> 的 <code>/uizze</code>子命令與 scripts 亦然），本專案 UI 是 Android Compose，只取其中的美感與文案原則；<code>kotlin-tooling-native-build-performance</code> 針對 KMP + iOS 的建置變慢，本專案 Android-only、無 KMP 與 iOS target。</li>
+      <li><strong>測試只有一條接縫</strong>：<code>app/src/test/</code> 只有 <code>sensor/SensorMathTest.kt</code>（純函式，JVM 可跑，是 <code>tdd</code> 目前的唯一接縫）；<code>androidTest/</code> 還是空的，<code>sensor/</code> 的 Flow 層與 Compose 畫面都還沒測試。</li>
+      <li><strong>部分被引用的同伴 skill 還不存在</strong>：<code>grill-with-docs</code> 與 <code>wayfinder</code> 要呼叫的 <code>grilling</code>／<code>domain-modeling</code>／<code>research</code>／<code>prototype</code>、<code>tdd</code> 指向的 <code>codebase-design</code>，在 <code>.agents/</code>、<code>~/.agents/skills/</code>、<code>~/.claude/skills/</code> 都找不到。碰到就先告訴使用者缺哪一個，然後用對話把那一步直接做完（把題目問清楚、自己寫研究筆記）。</li>
+      <li><strong>2 個外掛 skill 不落在本專案</strong>：<code>frontend-design</code> 與 <code>ui-design</code> 針對 web／iOS（<code>ui-design</code> 的 <code>/uizze</code> 子命令與 scripts 亦然），本專案 UI 是 Android Compose，只取其中的美感與文案原則；<code>kotlin-tooling-native-build-performance</code> 針對 KMP + iOS 的建置變慢，本專案 Android-only、無 KMP 與 iOS target。</li>
     </ul>
     <h2 id="h-5">Agent skills</h2>
     <h3 id="h-6">Issue tracker</h3>
@@ -346,60 +347,61 @@ footer p { margin: .25rem 0; }
       <tr><td>JDK</td><td>17</td><td><code>compileOptions</code></td></tr>
       </tbody>
     </table></div>
-    <p>其他相依：<code>androidx.activity:activity-compose:1.13.0</code>、<code>androidx.navigation:navigation-compose:2.10.2</code>。</p>
+    <p>其他相依套件：<code>androidx.activity:activity-compose:1.13.0</code>、<code>androidx.navigation:navigation-compose:2.10.2</code>、<code>androidx.appcompat:appcompat:1.8.0</code>（語系切換）、<code>kotlinx-coroutines-android:1.10.2</code>；測試用 <code>junit:4.13.2</code>。</p>
     <h2 id="h-10">常用指令</h2>
     <pre class="code" data-lang="powershell"><code>.\gradlew.bat assembleDebug        # 產出 app/build/outputs/apk/debug/app-debug.apk
 .\gradlew.bat installDebug         # 裝到已連接的裝置／emulator
 .\gradlew.bat lint                 # 靜態檢查
-.\gradlew.bat test                 # 目前沒有任何測試</code></pre>
+.\gradlew.bat test                 # JVM 單元測試（sensor/SensorMathTest.kt）</code></pre>
     <p><strong>一律用 <code>.\gradlew.bat</code>，不要用 PATH 上的 <code>gradle</code>。</strong> 見下方工具鏈說明。第一次建置會下載 Gradle 9.6.0 與全部相依，實測約 12 分鐘；之後約 30 秒。</p>
     <p>驗證 SDK 路徑：</p>
     <pre class="code" data-lang="powershell"><code>E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\debug\app-debug.apk</code></pre>
     <h2 id="h-11">工具鏈陷阱（皆已實測）</h2>
     <ul>
       <li><strong>PATH 上的 <code>gradle</code> 是 8.1.1，完全不能用在本專案。</strong> AGP 9.4 要求 Gradle 9.6，用全域那顆會在 plugin resolution 就失敗。只能用 wrapper。</li>
-      <li><strong>JDK 分裂</strong>：<code>JAVA_HOME=C:\Java\jdk-17</code>，但 <code>PATH</code> 上的 <code>java</code> 是<code>C:\Java\jdk-25.0.4.7-hotspot</code>。Gradle 走 <code>JAVA_HOME</code>（實測 Gradle 9.6 跑在 JVM 17），所以 <strong><code>java -version</code> 不能用來驗證 build 用的 JDK</strong>。遇到不支援的 JDK 錯誤先懷疑這裡。</li>
+      <li><strong>JDK 分裂</strong>：<code>JAVA_HOME=C:\Java\jdk-17</code>，但 <code>PATH</code> 上的 <code>java</code> 是 <code>C:\Java\jdk-25.0.4.7-hotspot</code>。Gradle 走 <code>JAVA_HOME</code>（實測 Gradle 9.6 跑在 JVM 17），所以 <strong><code>java -version</code> 不能用來驗證 build 用的 JDK</strong>。遇到不支援的 JDK 錯誤先懷疑這裡。</li>
       <li><strong>SDK 路徑</strong>：<code>E:\Android\Sdk</code>，<code>ANDROID_HOME</code> 與 <code>ANDROID_SDK_ROOT</code> 都有設。<code>local.properties</code> 裡也寫了一份 <code>sdk.dir</code>。<strong><code>local.properties</code> 已被 gitignore，不要 commit。</strong></li>
       <li><strong><code>adb</code> 不在 <code>PATH</code></strong>，要用的話走完整路徑 <code>E:\Android\Sdk\platform-tools\adb.exe</code>。</li>
       <li>AGP 在第一次建置時會<strong>自動下載並安裝缺少的 SDK platform</strong>（本專案已讓它裝了 <code>android-37.0</code>）。這是正常行為，不是錯誤。</li>
       <li><code>kotlinc</code> 未安裝，一切編譯都走 Gradle。</li>
     </ul>
-    <h2 id="h-12">AGP 9 的兩個大坑</h2>
-    <p>1. <strong>不要套 <code>org.jetbrains.kotlin.android</code> plugin。</strong> AGP 9.0 起 Kotlin 是內建支援，套了會出現 <code>Cannot add extension with name 'kotlin'</code> 之類的錯誤。網路上幾乎所有教學都還在套 —— 不要照抄。（真的需要退回舊寫法才加 <code>android.builtInKotlin=false</code>，但 AGP 10 起失效。）2. <strong><code>androidx.compose.material:material-icons-core</code> / <code>-extended</code> 已停在 1.7.8</strong>（2025-02 後不再更新，也不再隨 Compose BOM 帶入）。本專案因此<strong>刻意不依賴 icon pack</strong>，底部導覽列目前只有文字標籤。之後要加 icon，請自己用 <code>ImageVector</code> 或 drawable 畫，不要把已停更的 artifact 加回來。</p>
+    <h2 id="h-12">AGP 9 的 2 個大地雷</h2>
+    <p>1. <strong>不要套 <code>org.jetbrains.kotlin.android</code> plugin。</strong> AGP 9.0 起 Kotlin 是內建支援，套了會出現 <code>Cannot add extension with name 'kotlin'</code> 之類的錯誤。網路上幾乎所有教學都還在套——不要照抄。（真的需要退回舊寫法才加 <code>android.builtInKotlin=false</code>，但 AGP 10 起失效。）2. <strong><code>androidx.compose.material:material-icons-core</code> / <code>-extended</code> 已停在 1.7.8</strong>（2025-02 後不再更新，也不再隨 Compose BOM 帶入）。本專案因此<strong>刻意不依賴 icon pack</strong>，底部導覽列目前只有文字標籤。之後要加 icon，請自己用 <code>ImageVector</code> 或 drawable 畫，不要把已停止更新的 artifact 加回來。</p>
     <h2 id="h-13">架構</h2>
     <ul>
-      <li>單一 <code>MainActivity</code>（<code>ui/theme/Theme.kt</code> 套用 Material 3 + 動態取色）</li>
-      <li><code>ui/JackCompassApp.kt</code>：<code>Scaffold</code> + 底部 <code>NavigationBar</code> + Navigation Compose <code>NavHost</code>，三個分頁由 private enum <code>ToolDestination</code> 驅動 —— <strong>新增工具在這裡加一筆即可</strong></li>
-      <li>三個畫面各自獨立：<code>ui/compass/</code>、<code>ui/level/</code>、<code>ui/gps/</code></li>
+      <li>單一 <code>MainActivity</code>（必須是 <code>AppCompatActivity</code>，<code>AppCompatDelegate</code> 的語系切換才生效）</li>
+      <li><code>ui/JackCompassApp.kt</code>：<code>Scaffold</code> + 底部 <code>NavigationBar</code> + Navigation Compose <code>NavHost</code>，3 個分頁由 private enum <code>ToolDestination</code> 驅動——<strong>新增工具在這裡加一筆即可</strong>；設定頁不在分頁列上，由右上齒輪進入</li>
+      <li>3 個工具畫面各自獨立：<code>ui/compass/</code>、<code>ui/level/</code>、<code>ui/gps/</code>；設定頁在 <code>ui/settings/</code></li>
+      <li><code>sensor/</code> 是三個功能共用的感測器層：<code>SensorMath.kt</code> 是純函式換算（無 Android 相依、JVM 可測），<code>SensorFlows.kt</code> 把 <code>SensorManager</code> 包成 <code>Flow</code>（進畫面才註冊、離開自動解除，濾波器每個收集者各一份）</li>
+      <li><code>ui/theme/</code>：Material 3 + API 31 以上動態取色；盤面另用固定深色色板（<code>DialScreen</code>／<code>CompassOrange</code>／<code>LevelGreen</code>…），刻意不跟動態取色</li>
+      <li>語系檔：<code>values/</code>（英文，預設）、<code>values-zh-rTW/</code>、<code>values-zh-rCN/</code>；系統 App 語言清單在 <code>res/xml/locales_config.xml</code></li>
       <li>原始碼放在 <strong><code>app/src/main/java/</code></strong>（AGP 內建 Kotlin 的預設路徑，同時相容 Java 檔案）</li>
-      <li>Manifest 已宣告定位權限，感測器為 <code>required="false"</code></li>
+      <li>Manifest 已宣告定位權限與 <code>VIBRATE</code>（指南針刻度震動），加速計與磁力計為 <code>required="false"</code></li>
     </ul>
-    <h3 id="h-14">預計要接的感測器</h3>
+    <h3 id="h-14">感測器</h3>
     <ul>
-      <li>指南針 → <code>TYPE_ROTATION_VECTOR</code>（或 <code>TYPE_MAGNETIC_FIELD</code> + <code>TYPE_ACCELEROMETER</code>），需低通濾波與磁偏角處理</li>
-      <li>水平儀 → <code>TYPE_ACCELEROMETER</code>，預計分「水平儀」與「傾角儀」兩種模式</li>
-      <li>GPS → Fused Location 或 <code>LocationManager</code>，只在畫面上顯示數值（緯度／經度／海拔／速度），<strong>不含地圖</strong></li>
+      <li>指南針（已實作）：<code>TYPE_ROTATION_VECTOR</code>，低通濾波後顯示磁北方位，<strong>未做磁偏角修正</strong></li>
+      <li>水平儀（已實作）：<code>TYPE_ACCELEROMETER</code>，HORIZONTAL／VERTICAL 2 種模式</li>
+      <li>GPS（未實作）：預計 Fused Location 或 <code>LocationManager</code>，只顯示數值（緯度／經度／海拔／速度），<strong>不含地圖</strong></li>
     </ul>
-    <p><code>SensorManager</code> 的 callback 目前沒有封裝層，之後三個功能共用的那一層還沒寫。</p>
     <h2 id="h-15">原型落差</h2>
-    <p>指 <code>spec/prototype.jpg</code>。該圖目前<strong>沒有實作</strong>，且與現況不一致，改動前先跟使用者確認：</p>
+    <p>指 <code>spec/prototype.jpg</code>。盤面樣式（固定深色＋橘／綠）與水平儀的 HORIZONTAL / VERTICAL 切換已照圖實作；以下是還對不上的地方，改動前先跟使用者確認：</p>
     <ul>
-      <li>prototype 是 <strong>4 個分頁</strong>（Compass / Level / Map / Settings），現況是 3 個且無 Settings</li>
-      <li>prototype 把<strong>指南針與水平儀放在同一個畫面</strong>（中間是羅盤盤面），現況是兩個獨立分頁</li>
-      <li>prototype 的水平儀有 <strong>VERTICAL / HORIZONTAL</strong> 切換</li>
-      <li>prototype 在<strong>羅盤畫面上直接顯示</strong> <code>ELEVATION 124m · 24.8781°N, 121.0544°E</code></li>
-      <li>prototype 是深色為主 + 橘色指針 + 綠色氣泡，文案為英文；現況是跟隨系統取色 + 中文標籤</li>
+      <li>prototype 是 <strong>4 個分頁</strong>（Compass / Level / Map / Settings），現況是 3 個分頁＋由齒輪進入的設定頁，且沒有 Map</li>
+      <li>prototype 把<strong>指南針與水平儀放在同一個畫面</strong>（中間是羅盤盤面），現況是 2 個獨立分頁</li>
+      <li>prototype 在<strong>羅盤畫面上直接顯示</strong> <code>ELEVATION 124m · 24.8781°N, 121.0544°E</code>，現況的羅盤畫面沒有這些數值</li>
+      <li>prototype 的文案是英文；現況預設英文，另外備有 zh-TW／zh-CN 語系檔</li>
     </ul>
     <h2 id="h-16">已知事項</h2>
     <ul>
-      <li><code>ACCESS_FINE_LOCATION</code> 會讓 AGP 自動加入 <code>uses-feature android.hardware.location required="true"</code>，等於<strong>沒有定位硬體的裝置無法安裝</strong>。若要純羅盤裝置也能裝，需改成 <code>required="false"</code>。</li>
+      <li><code>ACCESS_FINE_LOCATION</code> 會讓 AGP 自動加入 <code>uses-feature android.hardware.location required="true"</code>（已用 <code>aapt2 dump badging app\build\outputs\apk\debug\app-debug.apk</code> 驗證產出的 APK），等於<strong>沒有定位硬體的裝置無法安裝</strong>。要讓純羅盤裝置也能裝，需在 Manifest 明寫 <code>required="false"</code>。</li>
       <li>專案沒有設定任何 branch / PR / 發布流程，沿用使用者預設。</li>
     </ul>
   </main>
 </div>
 
 <footer>
-  <p>由 <code>AGENTS.md</code> 產生的一次性快照 · 2026-10-18</p>
+  <p>由 <code>AGENTS.md</code> 產生的一次性快照 · 2026-10-19</p>
   <p>原始檔更新後，這份要重新產生才算數。</p>
 </footer>
 </body>
