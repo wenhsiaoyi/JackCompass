@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 繁體中文（zh-TW）語系 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="tab_compass">指南針</string>
     <string name="tab_level">水平儀</string>
-    <string name="tab_gps">GPS</string>
 
     <string name="compass_no_sensor">此裝置沒有方位感測器，無法使用指南針</string>
     <string name="level_no_sensor">此裝置沒有加速計，無法使用水平儀</string>
     <string name="level_locked">已水平</string>
     <string name="level_mode_horizontal">水平</string>
     <string name="level_mode_vertical">垂直</string>
-    <string name="gps_not_implemented">GPS\n尚未實作</string>
+
+    <!-- 指南針畫面上的經緯度列。%1$s=緯度數 %2$s=南/北 %3$s=經度數 %4$s=東/西 -->
+    <string name="location_coordinates">%2$s緯 %1$s°、%4$s經 %3$s°</string>
+    <!-- 有定位硬體但還沒抓到位置時的佔位，刻意與實際格式同寬。
+         佔位用半形連字號而不是破折號，lint 的 TypographyDashes 在此是誤報。 -->
+    <string name="location_pending" tools:ignore="TypographyDashes">北緯 --.----°、東經 --.----°</string>
 
     <string name="settings_title">設定</string>
     <string name="settings_language">語言</string>

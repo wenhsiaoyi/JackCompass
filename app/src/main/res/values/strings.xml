@@ -5,7 +5,6 @@
 
     <string name="tab_compass">Compass</string>
     <string name="tab_level">Level</string>
-    <string name="tab_gps">GPS</string>
 
     <string name="compass_no_sensor">This device has no orientation sensor; the compass is unavailable</string>
     <string name="level_no_sensor">This device has no accelerometer; the level is unavailable</string>
@@ -13,7 +12,11 @@
     <string name="level_locked">On level</string>
     <string name="level_mode_horizontal">HORIZONTAL</string>
     <string name="level_mode_vertical">VERTICAL</string>
-    <string name="gps_not_implemented">GPS\nNot implemented yet</string>
+
+    <!-- 指南針畫面上的經緯度列。%1$s=緯度數 %2$s=南/北 %3$s=經度數 %4$s=東/西 -->
+    <string name="location_coordinates">%1$s°%2$s, %3$s°%4$s</string>
+    <!-- 有定位硬體但還沒抓到位置時的佔位，刻意與實際格式同寬 -->
+    <string name="location_pending">--.----°N, --.----°E</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>

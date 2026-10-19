@@ -24,18 +24,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.wenhsiaoyi.jackcompass.R
 import com.wenhsiaoyi.jackcompass.ui.compass.CompassScreen
-import com.wenhsiaoyi.jackcompass.ui.gps.GpsScreen
 import com.wenhsiaoyi.jackcompass.ui.level.LevelScreen
 import com.wenhsiaoyi.jackcompass.ui.settings.SettingsScreen
 
-/** 底部導覽列的三個工具分頁。新增工具時在這裡加一筆即可。 */
+/** 底部導覽列的兩個工具分頁。新增工具時在這裡加一筆即可。 */
 private enum class ToolDestination(
     val route: String,
     @param:StringRes val labelRes: Int,
 ) {
     Compass("compass", R.string.tab_compass),
     Level("level", R.string.tab_level),
-    Gps("gps", R.string.tab_gps),
 }
 
 /** 不在導覽列上的頁面路由。 */
@@ -103,7 +101,6 @@ fun JackCompassApp() {
             ) {
                 composable(ToolDestination.Compass.route) { CompassScreen() }
                 composable(ToolDestination.Level.route) { LevelScreen() }
-                composable(ToolDestination.Gps.route) { GpsScreen() }
                 composable(SETTINGS_ROUTE) { SettingsScreen() }
             }
 

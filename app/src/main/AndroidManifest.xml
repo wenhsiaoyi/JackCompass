@@ -19,6 +19,18 @@
         android:name="android.hardware.sensor.compass"
         android:required="false" />
 
+    <!--
+      一定要明寫：只要有 ACCESS_FINE_LOCATION，AGP 就會自動補
+      android.hardware.location required="true"，變成沒有定位硬體的裝置裝不上，
+      「沒有 GPS 就不顯示經緯度」那條路徑永遠走不到。
+    -->
+    <uses-feature
+        android:name="android.hardware.location"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"

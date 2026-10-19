@@ -1,9 +1,12 @@
 package com.wenhsiaoyi.jackcompass.ui.compass
 
+import android.Manifest
 import android.graphics.Paint
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -22,7 +25,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +41,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringArrayResource
@@ -47,8 +53,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wenhsiaoyi.jackcompass.R
 import com.wenhsiaoyi.jackcompass.sensor.cardinalDirectionIndex
 import com.wenhsiaoyi.jackcompass.sensor.compassBearingFlow
+import com.wenhsiaoyi.jackcompass.sensor.coordinateCardinalIndex
+import com.wenhsiaoyi.jackcompass.sensor.deviceHasLocation
 import com.wenhsiaoyi.jackcompass.sensor.displayedHeadingDegrees
+import com.wenhsiaoyi.jackcompass.sensor.formatCoordinateValue
+import com.wenhsiaoyi.jackcompass.sensor.hasLocationPermission
 import com.wenhsiaoyi.jackcompass.sensor.headingTickChanged
+import com.wenhsiaoyi.jackcompass.sensor.locationReadingFlow
 import com.wenhsiaoyi.jackcompass.ui.theme.CompassOrange
 import com.wenhsiaoyi.jackcompass.ui.theme.DialFace
 import com.wenhsiaoyi.jackcompass.ui.theme.DialRing
@@ -57,13 +68,15 @@ import com.wenhsiaoyi.jackcompass.ui.theme.DialText
 import com.wenhsiaoyi.jackcompass.ui.theme.DialTick
 import com.wenhsiaoyi.jackcompass.ui.theme.DialTickMajor
 import com.wenhsiaoyi.jackcompass.ui.theme.LevelGreenBright
+import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * 指南針畫面：大字方位角＋中文方位名，下方為隨方位角反向旋轉的羅盤盤面，
- * 橘色指針固定朝上、指向正北時轉綠。資料來自 TYPE_ROTATION_VECTOR（磁北，未做磁偏角修正）。
+ * 指南針畫面：大字方位角＋中文方位名，其下為經緯度列，再下方為隨方位角反向旋轉的羅盤盤面，
+ * 橘色指針固定朝上、指向正北時轉綠。方位資料來自 TYPE_ROTATION_VECTOR（磁北，未做磁偏角修正），
+ * 經緯度來自 LocationManager；裝置沒有定位硬體時整列不出現。
  */
 @Composable
 fun CompassScreen(modifier: Modifier = Modifier) {
@@ -113,7 +126,9 @@ fun CompassScreen(modifier: Modifier = Modifier) {
         ) {
             Spacer(Modifier.height(24.dp))
             Heading(azimuthDegrees = azimuth)
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
+            LocationReadout()
+            Spacer(Modifier.height(12.dp))
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -139,6 +154,65 @@ private fun Heading(azimuthDegrees: Float?) {
         text = azimuthDegrees?.let { directions[cardinalDirectionIndex(it)] } ?: " ",
         style = MaterialTheme.typography.titleMedium,
         color = DialText,
+    )
+}
+
+/**
+ * 經緯度列。三態：裝置無定位硬體 → 完全不輸出、不佔空間；
+ * 有硬體但還沒取得位置（尚未核准權限、或室內還沒 fix）→ 占位字串；有 fix → 實際座標。
+ *
+ * 小數點分隔符與方位字都跟著 App 語系走：語系由 `AppCompatDelegate` 決定，
+ * 從 `LocalConfiguration` 讀當前 locale 才能拿到切換後的結果，不能用 `Locale.getDefault()`。
+ */
+@Composable
+private fun LocationReadout(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    if (!remember(context) { deviceHasLocation(context) }) return
+
+    val cardinals = stringArrayResource(R.array.dial_cardinals)
+    val configuration = LocalConfiguration.current
+    val locale = remember(configuration) {
+        val locales = configuration.locales
+        if (locales.isEmpty) Locale.getDefault() else locales[0] ?: Locale.getDefault()
+    }
+
+    var isGranted by remember { mutableStateOf(hasLocationPermission(context)) }
+    var wasAsked by rememberSaveable { mutableStateOf(false) }
+    val askPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { isGranted = hasLocationPermission(context) }
+    LaunchedEffect(isGranted) {
+        if (!isGranted && !wasAsked) {
+            wasAsked = true
+            askPermission.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                ),
+            )
+        }
+    }
+
+    val flow = remember(context, isGranted) {
+        if (isGranted) locationReadingFlow(context) else null
+    }
+    val reading = flow?.collectAsStateWithLifecycle(initialValue = null)?.value
+
+    Text(
+        text = if (reading == null) {
+            stringResource(R.string.location_pending)
+        } else {
+            stringResource(
+                R.string.location_coordinates,
+                formatCoordinateValue(reading.latitude, locale),
+                cardinals[coordinateCardinalIndex(reading.latitude, isLatitude = true)],
+                formatCoordinateValue(reading.longitude, locale),
+                cardinals[coordinateCardinalIndex(reading.longitude, isLatitude = false)],
+            )
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        color = DialText,
+        modifier = modifier,
     )
 }
 
