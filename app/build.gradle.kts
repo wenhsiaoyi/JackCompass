@@ -27,8 +27,8 @@ android {
         applicationId = "com.hywen.app.jackcompass"
         minSdk = 24
         targetSdk = 37
-        versionCode = 3
-        versionName = "1.02"
+        versionCode = 4
+        versionName = "1.03"
         // 交給 manifest 決定實際值；debug 的測試 ID 由 debug 資源覆寫。
         manifestPlaceholders["admobAppId"] = "@string/admob_app_id"
     }
@@ -52,6 +52,8 @@ android {
 
         release {
             isMinifyEnabled = true
+            // 啟用資源縮減（刪除未使用的圖片、佈局等）
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
