@@ -56,5 +56,19 @@ captures/
 .DS_Store
 Thumbs.db
 
-# graft's local graph cache — regenerable, not committed (run `graft build`).
-graft/
+# trail's local graph cache is gitignored by .trail/.gitignore (run `trail build`).
+
+# Signing material — never commit. app/upload-keystore.jks is the Play App Signing
+# upload key; keystore.properties holds its passwords. Both are machine-local.
+*.jks
+*.keystore
+*.p12
+keystore.properties
+
+# 上架上傳腳本是本機工具（寫死機器本地的 service account 金鑰路徑），排除在版本外
+docs/upload_to_play.py
+
+# 驗證用的本機截圖（`_shots` 是 QA 過程、`_shots_store` 是商店圖的原始擷取）。
+# 要進版控的是整理後的 docs/store-screenshots/。
+_shots/
+_shots_store/
