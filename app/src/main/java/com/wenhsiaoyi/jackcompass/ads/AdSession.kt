@@ -118,6 +118,28 @@ class AdSession(
         }
     }
 
+    /** 使用者按下贊助列。回傳 false 代表政策擋掉（準備中或播放中）。 */
+    fun requestSponsor(activity: Activity): Boolean {
+        if (!sponsor.onClick()) return false
+        AdMobInterstitial.show(
+            activity = activity,
+            unitId = activity.getString(R.string.admob_interstitial_unit_id),
+            onUnavailable = { sponsor.onAdUnavailable(); sync() },
+            onShown = { sponsor.onAdShown(); sync() },
+            onDismissed = {
+                sponsor.onAdDismissed()
+                sync()
+                onSponsorDismissed?.invoke()
+            },
+            onShowFailed = { sponsor.onShowFailed(); sync() },
+        )
+        return true
+    }
+
+    var onSponsorDismissed: (() -> Unit)? = null
+
+    fun showPrivacyOptions(activity: Activity) = showPrivacyOptionsForm(activity) {}
+
     private fun canRequestFallback(info: ConsentInformation): Boolean = runCatching {
         info.canRequestAds()
     }.getOrDefault(false)

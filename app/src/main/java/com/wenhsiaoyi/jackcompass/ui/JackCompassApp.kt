@@ -127,7 +127,7 @@ fun JackCompassApp(session: AdSession) {
             ) {
                 composable(ToolDestination.Compass.route) { CompassScreen() }
                 composable(ToolDestination.Level.route) { LevelScreen() }
-                composable(SETTINGS_ROUTE) { SettingsScreen() }
+                composable(SETTINGS_ROUTE) { SettingsScreen(session = session) }
             }
 
             // 右上齒輪：任何分頁都能進設定；設定頁本身不重複顯示

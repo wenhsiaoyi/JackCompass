@@ -22,6 +22,15 @@
     <string name="settings_language">Language</string>
     <string name="settings_open">Open settings</string>
 
+    <string name="settings_sponsor_section">Support development</string>
+    <string name="settings_sponsor_title">Watch an ad to support us</string>
+    <string name="settings_sponsor_subtitle">Shows a full-screen ad. Nothing is unlocked.</string>
+    <string name="settings_sponsor_ready">Tap to watch an ad</string>
+    <string name="settings_sponsor_preparing">Loading…</string>
+    <string name="settings_sponsor_unavailable">No ad available right now</string>
+    <string name="settings_ads_section">Ad settings</string>
+    <string name="settings_ads_privacy">Adjust ad consent options</string>
+
     <!-- 羅盤盤面四正方位，順序固定為 N / E / S / W -->
     <string-array name="dial_cardinals">
         <item>N</item>

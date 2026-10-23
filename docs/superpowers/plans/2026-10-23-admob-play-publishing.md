@@ -1199,8 +1199,10 @@ import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAdEv
  * 全部簽名已用 javap 查證（見〈已驗證 SDK 表面〉）：
  * `InterstitialAd.load(AdRequest, AdLoadCallback<InterstitialAd>)` 是 static，
  * **沒有** activity 參數、**沒有** `InterstitialAdRequest`、**沒有**
- * `InterstitialAdLoadCallback` 這種專屬回呼型別；事件掛點是 `setAdEventCallback`，
- * 呈現失敗的参数型別是 `FullScreenContentError`（不是 `LoadAdError`）。
+ * `InterstitialAdLoadCallback` 這種專屬回呼型別；事件掛點在 Java 是 `setAdEventCallback`，
+ * 但它和 `getAdEventCallback` 成對，Kotlin 只把它當成屬性 `adEventCallback` 暴露——
+ * 寫 `ad.setAdEventCallback(...)` 會 `Unresolved reference`，要用 `ad.adEventCallback = ...`。
+ * 呈現失敗的參數型別是 `FullScreenContentError`（不是 `LoadAdError`）。
  */
 object AdMobInterstitial {
 
@@ -1222,18 +1224,16 @@ object AdMobInterstitial {
             object : AdLoadCallback<InterstitialAd> {
                 override fun onAdLoaded(ad: InterstitialAd) {
                     activity.runOnUiThread {
-                        ad.setAdEventCallback(
-                            object : InterstitialAdEventCallback {
-                                override fun onAdShowedFullScreenContent() = onShown()
-                                override fun onAdDismissedFullScreenContent() { ad.destroy(); onDismissed() }
-                                override fun onAdFailedToShowFullScreenContent(error: FullScreenContentError) { ad.destroy(); onShowFailed() }
-                            },
-                        )
+                        ad.adEventCallback = object : InterstitialAdEventCallback {
+                            override fun onAdShowedFullScreenContent() = onShown()
+                            override fun onAdDismissedFullScreenContent() { ad.destroy(); onDismissed() }
+                            override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) { ad.destroy(); onShowFailed() }
+                        }
                         ad.show(activity)
                     }
                 }
 
-                override fun onAdFailedToLoad(error: LoadAdError) = onUnavailable()
+                override fun onAdFailedToLoad(adError: LoadAdError) = onUnavailable()
             },
         )
     }
@@ -1862,8 +1862,8 @@ git commit -m "docs: record the ads architecture and the pre-release checklist"
 | 橫幅載入 | `...sdk.banner.BannerAd`（interface，extends `common.Ad`）：`static void load(BannerAdRequest, AdLoadCallback<BannerAd>)`；執行個體 `View getView(Activity)`、`AdSize getAdSize()`、`setAdEventCallback(BannerAdEventCallback)` | 同上 |
 | 橫幅容器（本專案**不用**） | `...sdk.banner.AdView`（`FrameLayout`）：`loadAd(...)`／`registerBannerAd(...)`／`destroy()`——它假設 XML 或 imperative 容器，Compose 改用 `BannerAd.getView()`，見 Task 6 Step 2 | 同上 |
 | 橫幅請求／尺寸 | `...sdk.banner.BannerAdRequest.Builder(String adUnitId, AdSize adSize)` → `build()`；`...sdk.banner.AdSize.BANNER`（`BANNER_WIDTH=320`、`BANNER_HEIGHT=50`，單位 dp）；另有 `getCurrentOrientationAnchoredAdaptiveBannerAdSize(Context,int)` | 同上，`javap -constants` |
-| 載入回呼（橫幅與插屏共用） | `...sdk.common.AdLoadCallback<AdT>`（interface，兩個 default：`onAdLoaded(AdT)`、`onAdFailedToLoad(LoadAdError)`）——**沒有** `BannerAdLoadCallback`／`InterstitialAdLoadCallback` 這種型別 | 同上 |
-| 插屏型別與回呼 | `...sdk.interstitial.InterstitialAd`（interface，extends `common.Ad`）：`static void load(common.AdRequest, AdLoadCallback<InterstitialAd>)`、`void show(Activity)`、`setImmersiveMode(boolean)`、`setAdEventCallback(InterstitialAdEventCallback)`；事件介面 `...sdk.interstitial.InterstitialAdEventCallback extends common.AdEventCallback` | 同上 |
+| 載入回呼（橫幅與插屏共用） | `...sdk.common.AdLoadCallback<AdT>`（interface，兩個 default：`onAdLoaded(ad)`、`onAdFailedToLoad(adError)`——**Kotlin 覆寫時參數名要照 `ad`／`adError`**，否則 `onAdFailedToLoad(error)` 會得到參數名不一致的警告）——**沒有** `BannerAdLoadCallback`／`InterstitialAdLoadCallback` 這種型別 | 同上 |
+| 插屏型別與回呼 | `...sdk.interstitial.InterstitialAd`（interface，extends `common.Ad`）：`static void load(common.AdRequest, AdLoadCallback<InterstitialAd>)`、`void show(Activity)`、`setImmersiveMode(boolean)`、`getAdEventCallback()`／`setAdEventCallback(InterstitialAdEventCallback)`——**Java 的 get/set 成對在 Kotlin 是屬性 `adEventCallback`，只能寫 `ad.adEventCallback = cb`**；事件介面 `...sdk.interstitial.InterstitialAdEventCallback extends common.AdEventCallback` | 同上 |
 | 插屏請求 | `...sdk.common.AdRequest.Builder(String adUnitId)` → `build()`——**插屏沒有專屬的 `InterstitialAdRequest` 類別** | 同上 |
 | 全螢幕事件 | `...sdk.common.AdEventCallback`（全 default）：`onAdShowedFullScreenContent()`、`onAdDismissedFullScreenContent()`、`onAdFailedToShowFullScreenContent(FullScreenContentError)`、`onAdImpression()`、`onAdClicked()`、`onAdPaid(AdValue)` | 同上 |
 | 銷毀 | `...sdk.common.Ad.destroy()`——`BannerAd`／`InterstitialAd` 都繼承它，`BannerHandle.release` 就呼這個 | 同上 |
@@ -1880,3 +1880,4 @@ git commit -m "docs: record the ads architecture and the pre-release checklist"
 - 插屏用 `common.AdRequest`，沒有 `InterstitialAdRequest`。
 - UMP 的 `showPrivacyOptionsForm` 掛在 `UserMessagingPlatform` 靜態方法上（不是 `ConsentInformation`）。
 - `InitializationConfig` 一律經 `Builder(applicationId)`，不可直接 new。
+- **`BannerAd.load(...)` 與 `BannerAd.getView(Activity)` 在 1.5.0 已標記 `@Deprecated`**（編譯會出現 `w: ... is deprecated. Use AdView.loadAd() or BannerAdPreloader instead.`）。本專案**故意繼續用它們**：官方建議的 `AdView` 是 imperative 容器（XML／`registerBannerAd`），交給 Compose `AndroidView` 會在每次重組搶生命週期；`BannerAdPreloader` 是預載路徑，spec 已定調不預載。實測 `assembleDebug` 綠、兩個警告不影響執行。升級 SDK 時這條要重新評估。
