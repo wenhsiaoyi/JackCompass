@@ -40,6 +40,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.JackCompass">
 
+        <!-- UMP 4.0 只從 manifest 讀這個 key，Next-Gen 的 InitializationConfig 不會餵給它。
+             實測少了這行：logcat 出現「UMP SDK requires a valid application ID」，
+             同意表單永遠不出現，但 canRequestAds() 仍回 true、廣告照播——
+             等於靜默地跳過同意政策，不會報錯。值跟著 ads.xml 走，
+             debug 構型由 app/src/debug/res/values/ads.xml 覆寫成測試 ID。 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/admob_app_id" />
+
         <!-- API 32 以下：讓 appcompat 自動保存 App 內切換的語系（官方文件機制） -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

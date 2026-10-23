@@ -6,4 +6,10 @@
     <string name="admob_interstitial_unit_id" translatable="false">ca-app-pub-3940256099942544/1033173712</string>
 
     <bool name="ads_force_eea_debug">true</bool>
+
+    <!-- UMP 的除錯地區只認這顆清單裡的裝置。值是 Google 自己算的 MD5 大寫十六進位，
+         無法由 ANDROID_ID 推得（實測 MD5／SHA-1／SHA-256 全部對不上）；
+         取得方式是跑一次 debug 構型，從 logcat 的 UserMessagingPlatform 那行
+         addTestDeviceHashedId("…") 複製。每台開發機各填自己那筆。 -->
+    <string name="ads_debug_device_hashed_id" translatable="false">D92FBE7853CF9930FF9346F6CA0CBBFB</string>
 </resources>

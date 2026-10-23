@@ -8,4 +8,7 @@
 
     <!-- 把裝置強制成規範地區（EEA）好驗同意表單。只在 debug 構型為 true。 -->
     <bool name="ads_force_eea_debug">false</bool>
+
+    <!-- 除錯裝置的 UMP hashed id，只在 debug 構型有值；release 留空即完全不註冊除錯裝置。 -->
+    <string name="ads_debug_device_hashed_id" translatable="false"></string>
 </resources>

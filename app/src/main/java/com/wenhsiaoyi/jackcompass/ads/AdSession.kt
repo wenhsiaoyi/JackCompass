@@ -88,12 +88,12 @@ class AdSession(
 
         val builder = ConsentRequestParameters.Builder()
         if (context.resources.getBoolean(R.bool.ads_force_eea_debug)) {
-            builder.setConsentDebugSettings(
-                ConsentDebugSettings.Builder(context)
-                    .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
-                    .addTestDeviceHashedId(AdBootstrap.deviceHash(activity))
-                    .build(),
-            )
+            val debugSettings = ConsentDebugSettings.Builder(context)
+                .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+            // 除錯地區只認已註冊的裝置，漏了這筆伺服器就回 gdprApplies=0、表單永遠不出現。
+            val hashedId = context.getString(R.string.ads_debug_device_hashed_id)
+            if (hashedId.isNotBlank()) debugSettings.addTestDeviceHashedId(hashedId)
+            builder.setConsentDebugSettings(debugSettings.build())
         }
 
         info.requestConsentInfoUpdate(
