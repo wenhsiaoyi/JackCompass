@@ -40,6 +40,8 @@ import com.wenhsiaoyi.jackcompass.ui.components.SponsorThanksOverlay
 import com.wenhsiaoyi.jackcompass.ui.compass.CompassScreen
 import com.wenhsiaoyi.jackcompass.ui.level.LevelScreen
 import com.wenhsiaoyi.jackcompass.ui.settings.SettingsScreen
+import com.wenhsiaoyi.jackcompass.ui.theme.DialScreen
+import com.wenhsiaoyi.jackcompass.ui.theme.DialText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -122,6 +124,10 @@ fun JackCompassApp(session: AdSession) {
     // 感謝動畫要連導覽列一起蓋住，所以覆蓋層放在 Scaffold 外面
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            // 三個畫面都是固定深色盤面（DialScreen）。Scaffold 預設用
+            // MaterialTheme.colorScheme.background 填滿整個視窗，淺色模式下會在
+            // 狀態列／瀏海那塊留下一條白帶；改成盤面色，插邊區域才會跟畫面一致。
+            containerColor = DialScreen,
             snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
                 Column {
@@ -166,6 +172,8 @@ fun JackCompassApp(session: AdSession) {
                         Icon(
                             painter = painterResource(R.drawable.ic_settings),
                             contentDescription = stringResource(R.string.settings_open),
+                            // 盤面固定深色，淺色模式下 Material 預設的深色圖示會消失
+                            tint = DialText,
                         )
                     }
                 }
