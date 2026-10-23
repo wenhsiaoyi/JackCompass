@@ -105,8 +105,12 @@ class AdSession(
             val debugSettings = ConsentDebugSettings.Builder(context)
                 .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
             // 除錯地區只認已註冊的裝置，漏了這筆伺服器就回 gdprApplies=0、表單永遠不出現。
-            val hashedId = context.getString(R.string.ads_debug_device_hashed_id)
-            if (hashedId.isNotBlank()) debugSettings.addTestDeviceHashedId(hashedId)
+            // 可以放多筆（逗號分隔）：實機與 emulator 的 hash 不同，測試時兩台都要能出表單。
+            context.getString(R.string.ads_debug_device_hashed_id)
+                .split(',')
+                .map(String::trim)
+                .filter(String::isNotEmpty)
+                .forEach(debugSettings::addTestDeviceHashedId)
             builder.setConsentDebugSettings(debugSettings.build())
         }
 
@@ -114,11 +118,19 @@ class AdSession(
             activity,
             builder.build(),
             {
-                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { _ ->
+                UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { error ->
+                    if (error != null) {
+                        Log.w(TAG, "consent form failed: code=${error.errorCode} ${error.message}")
+                    }
                     finish(context, info.canRequestAds())
                 }
             },
-            { _ -> finish(context, canRequestFallback(info)) },
+            { error ->
+                // 後台沒有建同意訊息時就是這裡失敗（Publisher misconfiguration）。
+                // 不記下來的話，App 只會安靜地繼續，看起來像「表單忘了跳」。
+                Log.w(TAG, "consent info update failed: code=${error.errorCode} ${error.message}")
+                finish(context, canRequestFallback(info))
+            },
         )
     }
 

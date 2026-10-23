@@ -11,5 +11,5 @@
          無法由 ANDROID_ID 推得（實測 MD5／SHA-1／SHA-256 全部對不上）；
          取得方式是跑一次 debug 構型，從 logcat 的 UserMessagingPlatform 那行
          addTestDeviceHashedId("…") 複製。每台開發機各填自己那筆。 -->
-    <string name="ads_debug_device_hashed_id" translatable="false">D92FBE7853CF9930FF9346F6CA0CBBFB</string>
+    <string name="ads_debug_device_hashed_id" translatable="false">D92FBE7853CF9930FF9346F6CA0CBBFB,B3EEABB8EE11C2BE770B684D95219ECB</string>
 </resources>
