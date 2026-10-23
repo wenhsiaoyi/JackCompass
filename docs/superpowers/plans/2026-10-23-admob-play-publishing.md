@@ -812,6 +812,7 @@ class AdSession(
         }
 
         info.requestConsentInfoUpdate(
+            activity,
             builder.build(),
             {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { _ ->
@@ -825,7 +826,7 @@ class AdSession(
     /** 規範區使用者事後改同意的唯一入口；Google 政策要求一定要有。 */
     fun showPrivacyOptionsForm(activity: Activity, onDismissed: () -> Unit) {
         val info = information ?: return
-        info.showPrivacyOptionsForm(activity) { _ ->
+        UserMessagingPlatform.showPrivacyOptionsForm(activity) { _ ->
             finish(activity.applicationContext, info.canRequestAds())
             onDismissed()
         }
@@ -866,6 +867,8 @@ fun Context.asActivity(): Activity? {
     return null
 }
 ```
+
+三處與網路教學不同、已用 `javap` 查证的 UMP 4.0 形狀：`requestConsentInfoUpdate` **第一個參數是 Activity**（範例常省略）；`showPrivacyOptionsForm` 是 `UserMessagingPlatform` 的靜態方法，**不在 `ConsentInformation` 上**；`OnConsentInfoUpdateSuccessListener.onConsentInfoUpdateSuccess()` **不帶參數**（3.x 的 `boolean isDebugBuild` 已移除），所以 SAM 寫法是 `{ ... }` 而不是 `{ _ -> ... }`。失敗與表單關閉的兩個回呼都收 `FormError`。
 
 - [ ] **Step 4: 補 `AdBootstrap.deviceHash`**
 
@@ -1018,11 +1021,10 @@ package com.wenhsiaoyi.jackcompass.ads
 
 import android.app.Activity
 import android.view.View
-import com.google.android.libraries.ads.mobile.sdk.banner.AdLoadCallback
 import com.google.android.libraries.ads.mobile.sdk.banner.AdSize
-import com.google.android.libraries.ads.mobile.sdk.banner.AdView
 import com.google.android.libraries.ads.mobile.sdk.banner.BannerAd
 import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRequest
+import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback
 import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
 
 /**
@@ -1036,25 +1038,24 @@ class BannerHandle(val view: View, private val release: () -> Unit) {
 /**
  * 橫幅的 SDK 接觸面。全專案只有這裡 import 橫幅型別。
  *
- * import 路徑與方法簽名以 Task 2 的〈已驗證 SDK 表面〉為準；對不上就用
- *   javap -classpath <解出的 classes.jar> com.google.android.libraries.ads.mobile.sdk.banner.AdView
- * 查真實簽名後修正，不要改政策層。
+ * 走 `BannerAd.load(...)` 再取 `ad.getView(activity)`，**不用 `AdView` 容器**：
+ * `AdView` 假設 imperative 的 XML 容器與 `registerBannerAd`，交給 Compose
+ * `AndroidView` 的 factory 會在每次重組時搶生命週期。這裡把 View 交給
+ * `BannerHandle` 持有，销毁只呼 `ad.destroy()`（`common.Ad` 繼承來的）。
  */
 object AdMobBanner {
 
     fun load(activity: Activity, unitId: String, onLoaded: (BannerHandle) -> Unit, onFailed: () -> Unit) {
         activity.runOnUiThread {
-            val view = AdView(activity)
-            view.loadAd(
-                BannerAdRequest.Builder(unitId, AdSize.getLargeAnchoredAdaptiveBannerAdSize(activity, 52)).build(),
+            val request = BannerAdRequest.Builder(unitId, AdSize.BANNER).build()
+            BannerAd.load(
+                request,
                 object : AdLoadCallback<BannerAd> {
                     override fun onAdLoaded(ad: BannerAd) {
-                        ad.setView(view)
-                        onLoaded(BannerHandle(view) { view.destroy() })
+                        onLoaded(BannerHandle(ad.getView(activity)) { ad.destroy() })
                     }
 
                     override fun onAdFailedToLoad(error: LoadAdError) {
-                        view.destroy()
                         onFailed()
                     }
                 },
@@ -1064,6 +1065,8 @@ object AdMobBanner {
 }
 ```
 
+`AdSize.BANNER` 是 320×50 dp（本表已查证的常數）。橫幅寬度由 View 自己量，所以 Task 6 Step 3 的槽**不要寫死高度**；若實測發現 Compose 把高度壓成 0，才改成從 `ad.getAdSize().getHeightInPixels(context)` 取數值帶進 `BannerHandle`。
+
 - [ ] **Step 3: 寫 `BannerSlot`**
 
 `app/src/main/java/com/wenhsiaoyi/jackcompass/ui/components/BannerSlot.kt`：
@@ -1072,10 +1075,8 @@ object AdMobBanner {
 package com.wenhsiaoyi.jackcompass.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.wenhsiaoyi.jackcompass.ads.AdSession
 
@@ -1084,10 +1085,12 @@ import com.wenhsiaoyi.jackcompass.ads.AdSession
  * 收起時整個 composable 不輸出任何東西，導覽列自己往下補位。
  *
  * 盤面直徑由寬度決定（CompassScreen 的 minOf(maxWidth, maxHeight)），
- * 所以收起橫幅不會讓盤面變大，只有中心下移——設計基準圖格 4 就是這樣画的。
+ * 所以收起橫幅不會讓盤面變大，只有中心下移——設計基準圖格 4 就是這樣畫的。
  *
- * 刻意不寫 AndroidView 的 onRelease 來銷毀 AdView：語系切換重建組合層時，
- * 那顆 AdView 還在倒數中、依然有效，onRelease 會把它當掉。
+ * 高度不寫死：`AdSize.BANNER` 是 320×50 dp，View 自己量得出來。
+ *
+ * 刻意不寫 AndroidView 的 onRelease 來銷毀：語系切換重建組合層時，
+ * 那張橫幅還在倒數中、依然有效，onRelease 會把它當掉。
  * 銷毀只在 AdSession.tickBanner() 判定收起的那一刻做。
  */
 @Composable
@@ -1096,9 +1099,7 @@ fun BannerSlot(session: AdSession, modifier: Modifier = Modifier) {
     if (handle == null) return
     AndroidView(
         factory = { handle.view },
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp),
+        modifier = modifier.fillMaxWidth(),
     )
 }
 ```
@@ -1185,17 +1186,21 @@ git commit -m "feat: anchor a once-per-run banner above the navigation bar with 
 package com.wenhsiaoyi.jackcompass.ads
 
 import android.app.Activity
+import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback
+import com.google.android.libraries.ads.mobile.sdk.common.AdRequest
+import com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError
 import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
-import com.google.android.libraries.ads.mobile.sdk.common.RequestParameters
 import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAd
 import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAdEventCallback
 
 /**
  * 插屏的 SDK 接觸面。全專案只有這裡 import 插屏型別。
  *
- * spec 風險第 1 點：Next-Gen 的官方說明把插屏類別寫在舊 SDK 的套件名前綴下，
- * 跟其他 Next-Gen 類別不一致。上面的 import 以 Task 2 解出的〈已驗證 SDK 表面〉為準；
- * 對不上就用 javap 查真實全名後修正，不要回退到 play-services-ads。
+ * 全部簽名已用 javap 查證（見〈已驗證 SDK 表面〉）：
+ * `InterstitialAd.load(AdRequest, AdLoadCallback<InterstitialAd>)` 是 static，
+ * **沒有** activity 參數、**沒有** `InterstitialAdRequest`、**沒有**
+ * `InterstitialAdLoadCallback` 這種專屬回呼型別；事件掛點是 `setAdEventCallback`，
+ * 呈現失敗的参数型別是 `FullScreenContentError`（不是 `LoadAdError`）。
  */
 object AdMobInterstitial {
 
@@ -1213,19 +1218,15 @@ object AdMobInterstitial {
         onShowFailed: () -> Unit,
     ) {
         InterstitialAd.load(
-            activity,
-            unitId,
-            RequestParameters(),
-            object : InterstitialAd.InterstitialAdLoadCallback<InterstitialAd> {
+            AdRequest.Builder(unitId).build(),
+            object : AdLoadCallback<InterstitialAd> {
                 override fun onAdLoaded(ad: InterstitialAd) {
                     activity.runOnUiThread {
-                        ad.setInterstitialAdEventCallback(
+                        ad.setAdEventCallback(
                             object : InterstitialAdEventCallback {
                                 override fun onAdShowedFullScreenContent() = onShown()
                                 override fun onAdDismissedFullScreenContent() { ad.destroy(); onDismissed() }
-                                override fun onAdFailedToShowFullScreenContent(error: LoadAdError) { ad.destroy(); onShowFailed() }
-                                override fun onAdImpression() {}
-                                override fun onAdClicked() {}
+                                override fun onAdFailedToShowFullScreenContent(error: FullScreenContentError) { ad.destroy(); onShowFailed() }
                             },
                         )
                         ad.show(activity)
@@ -1239,7 +1240,7 @@ object AdMobInterstitial {
 }
 ```
 
-方法與回呼介面名稱（`InterstitialAd.load`、`InterstitialAdLoadCallback`、`setInterstitialAdEventCallback`、五個回呼）都要在 Step 6 的編譯與 javap 比對中確認；**若 Next-Gen 只有 `InterstitialAdPreloader.start(PreloadConfiguration)` 這條路，就改用預載：`InterstitialAdPreloader.start(PreloadConfiguration.Builder(activity).setAdUnitId(unitId).build())`，再 `pollAd()` 取廣告**。兩條路的選擇寫進 commit 訊息。
+`InterstitialAdEventCallback` 的所有方法都是 default（含 `onAdImpression`／`onAdClicked`／`onAdPaid`），所以只覆寫需要的那三個即可編過。`interstitial.InterstitialAdPreloader` 確實存在，但**本專案不走預載**：`load` 這條路已由 javap 證明可用，預載是 spec 說的「可選」。
 
 - [ ] **Step 2: 給 `AdSession` 加贊助方法**
 
@@ -1856,11 +1857,26 @@ git commit -m "docs: record the ads architecture and the pre-release checklist"
 
 | 用途 | 已驗證全名 | 取得方式 |
 |---|---|---|
-| 初始化入口 | _(待 Task 2 填入)_ | aar classes.jar 列表 |
-| `InitializationConfig` | _(待 Task 2 填入)_ | 同上 |
-| 橫幅 AdView | _(待 Task 2 填入)_ | 同上 |
-| 橫幅請求／尺寸 | _(待 Task 2 填入)_ | 同上 |
-| 插屏型別與回呼 | _(待 Task 2 填入)_ | 同上 |
-| UMP `UserMessagingPlatform`／`ConsentInformation`／`showPrivacyOptionsForm` 掛點 | _(待 Task 2 填入)_ | jar 列表 |
+| 初始化入口 | `com.google.android.libraries.ads.mobile.sdk.MobileAds`（`static void initialize(Context, InitializationConfig)`、`static boolean isInitialized()`） | aar classes.jar ＋ `javap` |
+| `InitializationConfig` | `...sdk.initialization.InitializationConfig`，**只能經 `InitializationConfig.Builder(String applicationId)` 取得**（Builder 另有 `setRequestConfiguration`／`disableSdkCrashReporting`／`build()`；公開建構子是 9 參數的 synthetic，不要直接 new） | 同上 |
+| 橫幅載入 | `...sdk.banner.BannerAd`（interface，extends `common.Ad`）：`static void load(BannerAdRequest, AdLoadCallback<BannerAd>)`；執行個體 `View getView(Activity)`、`AdSize getAdSize()`、`setAdEventCallback(BannerAdEventCallback)` | 同上 |
+| 橫幅容器（本專案**不用**） | `...sdk.banner.AdView`（`FrameLayout`）：`loadAd(...)`／`registerBannerAd(...)`／`destroy()`——它假設 XML 或 imperative 容器，Compose 改用 `BannerAd.getView()`，見 Task 6 Step 2 | 同上 |
+| 橫幅請求／尺寸 | `...sdk.banner.BannerAdRequest.Builder(String adUnitId, AdSize adSize)` → `build()`；`...sdk.banner.AdSize.BANNER`（`BANNER_WIDTH=320`、`BANNER_HEIGHT=50`，單位 dp）；另有 `getCurrentOrientationAnchoredAdaptiveBannerAdSize(Context,int)` | 同上，`javap -constants` |
+| 載入回呼（橫幅與插屏共用） | `...sdk.common.AdLoadCallback<AdT>`（interface，兩個 default：`onAdLoaded(AdT)`、`onAdFailedToLoad(LoadAdError)`）——**沒有** `BannerAdLoadCallback`／`InterstitialAdLoadCallback` 這種型別 | 同上 |
+| 插屏型別與回呼 | `...sdk.interstitial.InterstitialAd`（interface，extends `common.Ad`）：`static void load(common.AdRequest, AdLoadCallback<InterstitialAd>)`、`void show(Activity)`、`setImmersiveMode(boolean)`、`setAdEventCallback(InterstitialAdEventCallback)`；事件介面 `...sdk.interstitial.InterstitialAdEventCallback extends common.AdEventCallback` | 同上 |
+| 插屏請求 | `...sdk.common.AdRequest.Builder(String adUnitId)` → `build()`——**插屏沒有專屬的 `InterstitialAdRequest` 類別** | 同上 |
+| 全螢幕事件 | `...sdk.common.AdEventCallback`（全 default）：`onAdShowedFullScreenContent()`、`onAdDismissedFullScreenContent()`、`onAdFailedToShowFullScreenContent(FullScreenContentError)`、`onAdImpression()`、`onAdClicked()`、`onAdPaid(AdValue)` | 同上 |
+| 銷毀 | `...sdk.common.Ad.destroy()`——`BannerAd`／`InterstitialAd` 都繼承它，`BannerHandle.release` 就呼這個 | 同上 |
+| UMP 入口 | `com.google.android.ump.UserMessagingPlatform`：`static ConsentInformation getConsentInformation(Context)`、`static void loadAndShowConsentFormIfRequired(Activity, ConsentForm.OnConsentFormDismissedListener)`、`static void showPrivacyOptionsForm(Activity, ConsentForm.OnConsentFormDismissedListener)` | UMP aar ＝ 一般 jar 結構，`javap` |
+| UMP 同意狀態 | `com.google.android.ump.ConsentInformation`：`requestConsentInfoUpdate(Activity, ConsentRequestParameters, OnConsentInfoUpdateSuccessListener, OnConsentInfoUpdateFailureListener)`、`boolean canRequestAds()`、`PrivacyOptionsRequirementStatus getPrivacyOptionsRequirementStatus()`、`boolean isConsentFormAvailable()`、`reset()` | 同上 |
+| UMP 參數與除錯 | `ConsentRequestParameters.Builder()`（**無參构造**）→ `setAdMobAppId(String)`／`setConsentDebugSettings(...)`／`setTagForUnderAgeOfConsent(boolean)`／`build()`；`ConsentDebugSettings.Builder(Context)` → `setForceTesting(boolean)`、`setDebugGeography(int)`、`addTestDeviceHashedId(String)`；常數在 `ConsentDebugSettings$DebugGeography.DEBUG_GEOGRAPHY_EEA` | 同上 |
 
-（這是**刻意留白**：本表只能由實際 Gradle 產出填入，計畫階段猜出來的名字正是 spec 點名的風險來源。Task 2 之後不得再留白。）
+（本表由 Task 2 的實際 Gradle 產出填入，**它是後續包裝層 import 的唯一依據**。查證過程：`assembleDebug` 把 aar 落進 `E:\gradle-home\caches\modules-2\files-2.1\...`（`gradle :app:dependencies` 只抓 POM，不會下載 aar——別用它的結果判斷「找不到 aar」），解出 `classes.jar` 後 `javap -classpath <解壓目錄> <全名>`。）
+
+與計畫原本的假設不同、已照本表修正的地方：
+
+- 橫幅**不透過 `AdView`**，改走 `BannerAd.load(...)` → `bannerAd.getView(activity)`；`AdView` 那條路是 imperative 容器，跟 Compose 重組搶生命週期。
+- 載入回呼是共用的 `common.AdLoadCallback`，不是各格式專屬的 `*LoadCallback`。
+- 插屏用 `common.AdRequest`，沒有 `InterstitialAdRequest`。
+- UMP 的 `showPrivacyOptionsForm` 掛在 `UserMessagingPlatform` 靜態方法上（不是 `ConsentInformation`）。
+- `InitializationConfig` 一律經 `Builder(applicationId)`，不可直接 new。
