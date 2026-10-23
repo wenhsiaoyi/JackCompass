@@ -38,6 +38,47 @@ class AdSession(
     val nowMillis: Long get() = SystemClock.elapsedRealtime()
 
     /**
+     * 目前顯示中的橫幅。同一顆 AdView 在顯示期間不重建：重新載入會多算一次
+     * impression、也會閃。做成 State 是為了讓收起那一刻能重組。
+     */
+    var bannerHandle: BannerHandle? by mutableStateOf(null)
+        private set
+
+    val bannerVisible: Boolean get() = bannerStage == BannerStage.Showing
+
+    private var bannerRequested = false
+
+    /** 只在政策允許、且本場還沒請求過時發請求——保證一次執行只載入一次。 */
+    fun requestBanner(activity: Activity) {
+        if (bannerRequested || !banner.mayRequestAd) return
+        bannerRequested = true
+        AdMobBanner.load(
+            activity = activity,
+            unitId = activity.getString(R.string.admob_banner_unit_id),
+            onLoaded = { handle ->
+                banner.onAdLoaded(nowMillis)
+                bannerHandle = handle
+                sync()
+            },
+            onFailed = {
+                banner.onLoadFailed()
+                sync()
+            },
+        )
+    }
+
+    /** UI 每 250 毫秒呼叫一次；收起那一刻由政策層判定，這裡負責銷毀檢視圖。 */
+    fun tickBanner() {
+        val wasCollapsed = bannerStage == BannerStage.Collapsed
+        banner.onTick(nowMillis)
+        if (!wasCollapsed && banner.stage == BannerStage.Collapsed) {
+            bannerHandle?.destroy()
+            bannerHandle = null
+        }
+        sync()
+    }
+
+    /**
      * 同意鏈，順序不可調（spec「同意鏈」）：
      * 請求更新 → 需要時顯示表單 → 才初始化 SDK（背景執行緒）→ 檢查可否請求。
      */

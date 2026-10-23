@@ -2,6 +2,7 @@ package com.wenhsiaoyi.jackcompass.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -10,9 +11,11 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -23,10 +26,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.wenhsiaoyi.jackcompass.ads.AdSession
+import com.wenhsiaoyi.jackcompass.ads.BannerStage
+import com.wenhsiaoyi.jackcompass.ads.asActivity
 import com.wenhsiaoyi.jackcompass.R
+import com.wenhsiaoyi.jackcompass.ui.components.BannerSlot
 import com.wenhsiaoyi.jackcompass.ui.compass.CompassScreen
 import com.wenhsiaoyi.jackcompass.ui.level.LevelScreen
 import com.wenhsiaoyi.jackcompass.ui.settings.SettingsScreen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 /** 底部導覽列的兩個工具分頁。新增工具時在這裡加一筆即可。 */
 private enum class ToolDestination(
@@ -71,24 +79,41 @@ private fun NavHostController.selectTab(route: String) {
 
 @Composable
 fun JackCompassApp(session: AdSession) {
+    val context = LocalContext.current
+    val activity = context.asActivity()
+    LaunchedEffect(session, activity) {
+        if (activity == null) return@LaunchedEffect
+        while (isActive &&
+            session.bannerStage != BannerStage.Collapsed &&
+            session.bannerStage != BannerStage.Suppressed
+        ) {
+            session.requestBanner(activity)
+            session.tickBanner()
+            delay(250L)
+        }
+    }
+
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                ToolDestination.entries.forEach { destination ->
-                    val selected = currentDestination
-                        ?.hierarchy
-                        ?.any { it.route == destination.route } == true
+            Column {
+                BannerSlot(session = session)
+                NavigationBar {
+                    ToolDestination.entries.forEach { destination ->
+                        val selected = currentDestination
+                            ?.hierarchy
+                            ?.any { it.route == destination.route } == true
 
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = { navController.selectTab(destination.route) },
-                        icon = {},
-                        label = { Text(stringResource(destination.labelRes)) },
-                    )
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = { navController.selectTab(destination.route) },
+                            icon = {},
+                            label = { Text(stringResource(destination.labelRes)) },
+                        )
+                    }
                 }
             }
         },
