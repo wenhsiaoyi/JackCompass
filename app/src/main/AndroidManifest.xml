@@ -56,6 +56,15 @@
             android:name="firebase_analytics_collection_enabled"
             android:value="false" />
 
+        <!-- Analytics 只用來看彙總使用情形，不用於廣告：
+             關掉廣告識別碼收集與廣告個人化訊號，隱私政策第五節的說法才成立。 -->
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="false" />
+
         <!-- API 32 以下：讓 appcompat 自動保存 App 內切換的語系（官方文件機制） -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
