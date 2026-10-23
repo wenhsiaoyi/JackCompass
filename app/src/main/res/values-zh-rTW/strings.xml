@@ -20,6 +20,18 @@
     <string name="settings_language">語言</string>
     <string name="settings_open">打開設定</string>
 
+    <string name="settings_sponsor_section">支持開發者</string>
+    <string name="settings_sponsor_title">看廣告支持開發者</string>
+    <string name="settings_sponsor_subtitle">播放一段全螢幕廣告，不解鎖任何功能</string>
+    <string name="settings_sponsor_ready">按一下就播放</string>
+    <string name="settings_sponsor_preparing">正在準備廣告…</string>
+    <string name="settings_sponsor_unavailable">暫時沒有可播的廣告</string>
+    <string name="settings_ads_section">廣告設定</string>
+    <string name="settings_ads_privacy">調整廣告同意選項</string>
+
+    <string name="sponsor_thanks_title">感謝贊助</string>
+    <string name="sponsor_thanks_body">你的支持讓這個工具繼續免費</string>
+
     <!-- 羅盤盤面四正方位，順序固定為 N / E / S / W -->
     <string-array name="dial_cardinals">
         <item>北</item>
