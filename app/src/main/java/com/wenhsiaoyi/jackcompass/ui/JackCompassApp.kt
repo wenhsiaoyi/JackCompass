@@ -22,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.wenhsiaoyi.jackcompass.ads.AdSession
 import com.wenhsiaoyi.jackcompass.R
 import com.wenhsiaoyi.jackcompass.ui.compass.CompassScreen
 import com.wenhsiaoyi.jackcompass.ui.level.LevelScreen
@@ -69,7 +70,7 @@ private fun NavHostController.selectTab(route: String) {
  */
 
 @Composable
-fun JackCompassApp() {
+fun JackCompassApp(session: AdSession) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
