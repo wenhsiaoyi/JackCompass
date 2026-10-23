@@ -77,9 +77,12 @@
                 android:value="true" />
         </service>
 
+        <!-- 固定直向：盤面與設定頁都只為直向排版設計（設定頁在橫向會被裁掉，
+             沒有捲動）。平板／ChromeOS 這類大螢幕系統仍可能覆寫此設定。 -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.JackCompass">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
