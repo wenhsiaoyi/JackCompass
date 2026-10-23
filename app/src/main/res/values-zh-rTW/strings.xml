@@ -30,6 +30,7 @@
     <string name="settings_ads_privacy">調整廣告同意選項</string>
     <string name="settings_ads_form_unavailable">目前地區沒有可調整的廣告同意選項</string>
     <string name="settings_ads_form_failed">無法載入廣告同意選項，請稍後再試</string>
+    <string name="settings_version">版本 %1$s（%2$d）</string>
 
     <string name="sponsor_thanks_title">感謝贊助</string>
     <string name="sponsor_thanks_body">你的支持讓這個工具繼續免費</string>

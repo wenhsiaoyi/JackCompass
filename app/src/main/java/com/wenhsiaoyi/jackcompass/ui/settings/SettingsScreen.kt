@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
+import com.wenhsiaoyi.jackcompass.BuildConfig
 import com.wenhsiaoyi.jackcompass.ads.AdSession
 import com.wenhsiaoyi.jackcompass.ads.SponsorStage
 import com.wenhsiaoyi.jackcompass.R
@@ -82,7 +83,25 @@ fun SettingsScreen(session: AdSession, modifier: Modifier = Modifier) {
         SponsorSection(session = session)
         Spacer(Modifier.height(36.dp))
         AdSettingsSection(session = session)
+        Spacer(Modifier.weight(1f))
+        VersionFooter()
     }
+}
+
+/** 畫面最下方的版本資訊；回報問題時要對照的就是這兩個值。 */
+@Composable
+private fun VersionFooter() {
+    Text(
+        text = stringResource(
+            R.string.settings_version,
+            BuildConfig.VERSION_NAME,
+            BuildConfig.VERSION_CODE,
+        ),
+        style = MaterialTheme.typography.bodySmall,
+        color = DialTick,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.padding(top = 24.dp, bottom = 24.dp),
+    )
 }
 
 @Composable

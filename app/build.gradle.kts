@@ -1,6 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+// keystore.properties 是機器本地的（已被 .gitignore 蓋住）。缺檔時整個簽章設定不套，
+// 換機器或乾淨 clone 仍能建置 release，只是產出未簽章的 AAB。
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -11,8 +20,19 @@ android {
         applicationId = "com.hywen.app.jackcompass"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.02"
+    }
+
+    signingConfigs {
+        if (keystoreProps.isNotEmpty()) {
+            create("upload") {
+                storeFile = file(keystoreProps["storeFile"] as String)
+                storePassword = keystoreProps["storePassword"] as String
+                keyAlias = keystoreProps["keyAlias"] as String
+                keyPassword = keystoreProps["keyPassword"] as String
+            }
+        }
     }
 
     buildTypes {
@@ -22,7 +42,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.findByName("upload")
         }
+    }
+
+    buildFeatures {
+        // 設定頁底部的版本資訊直接讀 BuildConfig.VERSION_NAME／VERSION_CODE
+        buildConfig = true
     }
 
     compileOptions {
