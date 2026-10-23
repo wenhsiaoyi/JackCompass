@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- debug 構型覆寫：Google 官方測試 ID。開發期間跑的一定是這一版。 -->
+<!-- debug 構型覆寫：Google 官方測試 ID。開發期間跑的一定是這一版。
+     要讓 debug 版改用正式 App ID 驗 UMP 同意訊息時，不必改這個檔案：
+     .\gradlew.bat assembleDebug -PadmobAppId=<正式 App ID>（見 app/build.gradle.kts）。 -->
 <resources>
     <string name="admob_app_id" translatable="false">ca-app-pub-3940256099942544~3347511713</string>
     <string name="admob_banner_unit_id" translatable="false">ca-app-pub-3940256099942544/9214589741</string>
@@ -10,6 +12,7 @@
     <!-- UMP 的除錯地區只認這顆清單裡的裝置。值是 Google 自己算的 MD5 大寫十六進位，
          無法由 ANDROID_ID 推得（實測 MD5／SHA-1／SHA-256 全部對不上）；
          取得方式是跑一次 debug 構型，從 logcat 的 UserMessagingPlatform 那行
-         addTestDeviceHashedId("…") 複製。每台開發機各填自己那筆。 -->
+         addTestDeviceHashedId("…") 複製。可放多筆（逗號分隔），
+         實機與 emulator 各填自己那筆。 -->
     <string name="ads_debug_device_hashed_id" translatable="false">D92FBE7853CF9930FF9346F6CA0CBBFB,B3EEABB8EE11C2BE770B684D95219ECB</string>
 </resources>

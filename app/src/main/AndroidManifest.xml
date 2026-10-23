@@ -44,10 +44,12 @@
              實測少了這行：logcat 出現「UMP SDK requires a valid application ID」，
              同意表單永遠不出現，但 canRequestAds() 仍回 true、廣告照播——
              等於靜默地跳過同意政策，不會報錯。值跟著 ads.xml 走，
-             debug 構型由 app/src/debug/res/values/ads.xml 覆寫成測試 ID。 -->
+             debug 構型由 app/src/debug/res/values/ads.xml 覆寫成測試 ID。
+             ${admobAppId} 由 app/build.gradle.kts 填：預設是 @string/admob_app_id，
+             `-PadmobAppId=<正式 App ID>` 會蓋成字面值，用來驗正式的 UMP 訊息。 -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="@string/admob_app_id" />
+            android:value="${admobAppId}" />
 
         <!-- Analytics 預設關閉：FirebaseInitProvider 在 Application 建立時就初始化，
              不等 UMP 同意鏈。真正放行在 AdSession.finish() → AnalyticsConsent.apply()。

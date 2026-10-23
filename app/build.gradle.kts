@@ -13,6 +13,12 @@ val keystoreProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// debug 預設用 Google 測試 App ID（app/src/debug/res/values/ads.xml）。要驗正式的
+// UMP 同意訊息時，用 -PadmobAppId=<正式 App ID> 建 debug 版，不必改任何檔案：
+//   .\gradlew.bat assembleDebug -PadmobAppId=ca-app-pub-9662224353354096~1210011940
+// 只換 App ID，廣告單元仍是測試單元，所以不會產生真實流量。
+val admobAppIdOverride = providers.gradleProperty("admobAppId").orNull
+
 android {
     namespace = "com.wenhsiaoyi.jackcompass"
     compileSdk = 37
@@ -23,6 +29,8 @@ android {
         targetSdk = 37
         versionCode = 3
         versionName = "1.02"
+        // 交給 manifest 決定實際值；debug 的測試 ID 由 debug 資源覆寫。
+        manifestPlaceholders["admobAppId"] = "@string/admob_app_id"
     }
 
     signingConfigs {
@@ -37,6 +45,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 沒給 property 就照舊走 debug 的測試 App ID。
+            manifestPlaceholders["admobAppId"] = admobAppIdOverride ?: "@string/admob_app_id"
+        }
+
         release {
             isMinifyEnabled = true
             proguardFiles(
