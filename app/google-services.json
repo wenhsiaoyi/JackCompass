@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "898439847554",
+    "project_id": "jackcompass-site",
+    "storage_bucket": "jackcompass-site.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:898439847554:android:e17652d0ae64f8db555e9b",
+        "android_client_info": {
+          "package_name": "com.hywen.app.jackcompass"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmy0U_3sC_rlEhLrXDELUV8aUlit-lNXY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

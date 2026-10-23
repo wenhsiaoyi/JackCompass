@@ -49,6 +49,13 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/admob_app_id" />
 
+        <!-- Analytics 預設關閉：FirebaseInitProvider 在 Application 建立時就初始化，
+             不等 UMP 同意鏈。真正放行在 AdSession.finish() → AnalyticsConsent.apply()。
+             少了這行，第一次啟動（表單還沒出現）就會開始收集。 -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
+
         <!-- API 32 以下：讓 appcompat 自動保存 App 內切換的語系（官方文件機制） -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

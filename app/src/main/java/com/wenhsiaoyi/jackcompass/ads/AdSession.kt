@@ -169,6 +169,9 @@ class AdSession(
     }
 
     private fun finish(context: Context, granted: Boolean) {
+        // Analytics 的閘門跟廣告不同：廣告看 canRequestAds()，Analytics 看
+        // IABTCF_gdprApplies／Purpose 1（拒絕後 canRequestAds() 仍可能是 true）。
+        AnalyticsConsent.apply(context)
         if (!granted) {
             banner.onConsentDenied()
             sponsor.onConsentDenied()
