@@ -22,7 +22,7 @@ class BannerPolicyTest {
     }
 
     @Test
-    fun `同意後進入載入中，且只准請求一次`() {
+    fun `同意後進入載入中，且只允許請求一次`() {
         val policy = BannerPolicy()
         policy.onConsentGranted()
         assertEquals(BannerStage.Loading, policy.stage)

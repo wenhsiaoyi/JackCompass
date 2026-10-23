@@ -11,7 +11,7 @@ package com.wenhsiaoyi.jackcompass.ads
 const val BANNER_VISIBLE_DURATION_MS = 30_000L
 
 enum class BannerStage {
-    /** 還沒問完同意，不准請求廣告。 */
+    /** 還沒問完同意，不允許請求廣告。 */
     AwaitingConsent,
 
     /** 已通過同意閘門，正在等第一筆（也是本場唯一一筆）廣告。 */

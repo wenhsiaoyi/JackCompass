@@ -19,7 +19,7 @@
 - minSdk 24、compileSdk／targetSdk 37、JDK 17。`JAVA_HOME=C:\Java\jdk-17`，但 PATH 上的 `java` 是 JDK 25——**不要用 `java -version` 驗證建置 JDK**。
 - **`GRADLE_USER_HOME=E:\gradle-home`**（不是預設的 `%USERPROFILE%\.gradle`）。要從快取挖 aar／jar 時一律用 `"$GRADLE_USER_HOME/caches/modules-2/files-2.1/…"`。
 - `local.properties` 已 gitignore，**不可 commit**。
-- 開發期間**只准用 Google 官方測試 ID**（debug 構型自動覆寫），不得點自己的真廣告：AdMob 會判無效流量，嚴重者停權。
+- 開發期間**只允許使用 Google 官方測試 ID**（debug 構型自動覆寫），不得點自己的真廣告：AdMob 會判無效流量，嚴重者停權。
 - 中文文案依 `.agents/tw-translate/`（先讀 `SKILL.md`）：zh-TW 用「橫幅廣告」「插屏廣告」「設定」「資料」；品牌名 AdMob／Google 保留英文；中英間加半形空格；標點全形；介面文案不用行銷口吻。
 - 底部導覽列**不加 icon**（`material-icons-*` 已停更，是專案刻意事項）。
 - **本專案的 Compose（BOM 2026.09.00 → ui 1.12.1、material3 1.4.0）沒有 `LocalActivity`，也沒有 `LocalAccessibilityManager.current.isReduceMotionEnabled()`。** 兩者都以 `javap` 從快取的 `ui.aar`／`material3.aar` 查證過：前者根本不存在（`AndroidCompositionLocals_androidKt` 只導出 `getLocalContext`／`getLocalView`／`getLocalLifecycleOwner`…），後者的 `androidx.compose.ui.platform.AccessibilityManager` 介面只剩 `calculateRecommendedTimeoutMillis`。**取 Activity 一律用 `LocalContext.current.asActivity()`（Task 6 定義）；取「降低動態效果」一律用 Task 8 的 API 33 平台檢查。不要照網路教學寫 `LocalActivity`。**
@@ -141,7 +141,7 @@ spec「風險與實作時必須查證」第 1 點：官方說明把插屏預載�
 - Modify: `app/build.gradle.kts`
 
 **Interfaces:**
-- Produces: 一份「已驗證類別全名清單」，寫進本檔案下方的〈已驗證 SDK 表面〉小節（Step 5 補）。包裝層只准用清單上的名字。
+- Produces: 一份「已驗證類別全名清單」，寫進本檔案下方的〈已驗證 SDK 表面〉小節（Step 5 補）。包裝層只允許使用清單上的名字。
 
 - [ ] **Step 1: 加版本與 library**
 
@@ -267,7 +267,7 @@ class BannerPolicyTest {
     }
 
     @Test
-    fun `同意後進入載入中，且只准請求一次`() {
+    fun `同意後進入載入中，且只允許請求一次`() {
         val policy = BannerPolicy()
         policy.onConsentGranted()
         assertEquals(BannerStage.Loading, policy.stage)
@@ -387,7 +387,7 @@ package com.wenhsiaoyi.jackcompass.ads
 const val BANNER_VISIBLE_DURATION_MS = 30_000L
 
 enum class BannerStage {
-    /** 還沒問完同意，不准請求廣告。 */
+    /** 還沒問完同意，不允許請求廣告。 */
     AwaitingConsent,
 
     /** 已通過同意閘門，正在等第一筆（也是本場唯一一筆）廣告。 */
@@ -485,7 +485,7 @@ import org.junit.Test
 /**
  * 設定頁贊助入口的規則層測試。
  *
- * 插屏絕不自動播：只有使用者按下、且回傳 true 時，包裝層才准向 SDK 要廣告。
+ * 插屏絕不自動播：只有使用者按下、且回傳 true 時，包裝層才允許向 SDK 要廣告。
  * 「準備中」與「正在播」期間重複點擊回傳 false——不排隊、不重疊。
  */
 class SponsorPolicyTest {
@@ -495,7 +495,7 @@ class SponsorPolicyTest {
         val policy = SponsorPolicy()
         assertEquals(SponsorStage.Hidden, policy.stage)
         assertFalse(policy.isRowVisible)
-        assertFalse("隱藏時點了也不准請求", policy.onClick())
+        assertFalse("隱藏時點了也不允許請求", policy.onClick())
     }
 
     @Test
@@ -517,7 +517,7 @@ class SponsorPolicyTest {
     }
 
     @Test
-    fun `按下進入準備中並回傳准許請求`() {
+    fun `按下進入準備中並回傳允許請求`() {
         val policy = SponsorPolicy()
         policy.onConsentGranted()
         assertTrue(policy.onClick())
@@ -526,7 +526,7 @@ class SponsorPolicyTest {
     }
 
     @Test
-    fun `準備中重複點擊不准，也不會把請求排成隊`() {
+    fun `準備中重複點擊不被允許，也不會把請求排成隊`() {
         val policy = SponsorPolicy()
         policy.onConsentGranted()
         policy.onClick()
@@ -536,7 +536,7 @@ class SponsorPolicyTest {
     }
 
     @Test
-    fun `廣告呈現期間重複點擊不准`() {
+    fun `廣告呈現期間重複點擊不被允許`() {
         val policy = SponsorPolicy()
         policy.onConsentGranted()
         policy.onClick()
@@ -551,7 +551,7 @@ class SponsorPolicyTest {
         val policy = SponsorPolicy()
         policy.onConsentGranted()
         repeat(3) {
-            assertTrue("第 ${it + 1} 次都該准許", policy.onClick())
+            assertTrue("第 ${it + 1} 次都該允許", policy.onClick())
             policy.onAdShown()
             policy.onAdDismissed()
             assertEquals(SponsorStage.Ready, policy.stage)
@@ -656,7 +656,7 @@ class SponsorPolicy {
         stage = SponsorStage.Hidden
     }
 
-    /** 回傳 true 代表包裝層這一次**准許**向 SDK 請求並呈現插屏。 */
+    /** 回傳 true 代表包裝層這一次**允許**向 SDK 請求並呈現插屏。 */
     fun onClick(): Boolean {
         if (stage != SponsorStage.Ready && stage != SponsorStage.Unavailable) return false
         stage = SponsorStage.Preparing
@@ -748,7 +748,7 @@ object AdBootstrap {
 
 - [ ] **Step 3: 寫 `AdSession.kt`（同意鏈 + 政策層到 Compose 的橋接）**
 
-政策層保持純淨（不 import Android／Compose）；**只有 `AdSession` 准許依賴 Compose runtime**——它把政策的 `stage` 鏡射成 `mutableStateOf`，UI 才重組得到。直接讀 `banner.isVisible`／`sponsor.stage` 那種普通 getter 不會觸發重組，這是本計畫前一版的錯，別重蹈。
+政策層保持純淨（不 import Android／Compose）；**只有 `AdSession` 允許依賴 Compose runtime**——它把政策的 `stage` 鏡射成 `mutableStateOf`，UI 才重組得到。直接讀 `banner.isVisible`／`sponsor.stage` 那種普通 getter 不會觸發重組，這是本計畫前一版的錯，別重蹈。
 
 `app/src/main/java/com/wenhsiaoyi/jackcompass/ads/AdSession.kt`：
 
@@ -979,7 +979,7 @@ git commit -m "feat: run the consent chain before initializing the ads sdk"
 
     private var bannerRequested = false
 
-    /** 只在政策准許、且本場還沒請求過時發請求——保證一次執行只載入一次。 */
+    /** 只在政策允許、且本場還沒請求過時發請求——保證一次執行只載入一次。 */
     fun requestBanner(activity: Activity) {
         if (bannerRequested || !banner.mayRequestAd) return
         bannerRequested = true
