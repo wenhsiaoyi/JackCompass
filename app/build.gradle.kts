@@ -27,8 +27,8 @@ android {
         applicationId = "com.hywen.app.jackcompass"
         minSdk = 24
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.03"
+        versionCode = 5
+        versionName = "1.04"
         // 交給 manifest 決定實際值；debug 的測試 ID 由 debug 資源覆寫。
         manifestPlaceholders["admobAppId"] = "@string/admob_app_id"
     }
