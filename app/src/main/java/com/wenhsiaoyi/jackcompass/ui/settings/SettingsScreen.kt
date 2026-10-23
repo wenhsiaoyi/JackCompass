@@ -1,5 +1,6 @@
 package com.wenhsiaoyi.jackcompass.ui.settings
 
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
@@ -22,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
 import com.wenhsiaoyi.jackcompass.ads.AdSession
 import com.wenhsiaoyi.jackcompass.ads.SponsorStage
-import com.wenhsiaoyi.jackcompass.ads.asActivity
 import com.wenhsiaoyi.jackcompass.R
 import com.wenhsiaoyi.jackcompass.ui.theme.DialFace
 import com.wenhsiaoyi.jackcompass.ui.theme.DialScreen
@@ -131,7 +130,7 @@ private fun RowCard(
 private fun SponsorSection(session: AdSession) {
     val stage = session.sponsorStage          // Compose State：政策一變在這裡重組
     if (stage == SponsorStage.Hidden) return
-    val activity = LocalContext.current.asActivity() ?: return
+    val activity = LocalActivity.current ?: return
     SectionLabel(R.string.settings_sponsor_section)
     Spacer(Modifier.height(12.dp))
     RowCard(
@@ -155,7 +154,7 @@ private fun SponsorSection(session: AdSession) {
 
 @Composable
 private fun AdSettingsSection(session: AdSession) {
-    val activity = LocalContext.current.asActivity() ?: return
+    val activity = LocalActivity.current ?: return
     SectionLabel(R.string.settings_ads_section)
     Spacer(Modifier.height(12.dp))
     // 即使使用者拒絕同意也要留著：這是規範區事後改同意的唯一入口。

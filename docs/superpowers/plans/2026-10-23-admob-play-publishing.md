@@ -22,7 +22,8 @@
 - 開發期間**只允許使用 Google 官方測試 ID**（debug 構型自動覆寫），不得點自己的真廣告：AdMob 會判無效流量，嚴重者停權。
 - 中文文案依 `.agents/tw-translate/`（先讀 `SKILL.md`）：zh-TW 用「橫幅廣告」「插屏廣告」「設定」「資料」；品牌名 AdMob／Google 保留英文；中英間加半形空格；標點全形；介面文案不用行銷口吻。
 - 底部導覽列**不加 icon**（`material-icons-*` 已停更，是專案刻意事項）。
-- **本專案的 Compose（BOM 2026.09.00 → ui 1.12.1、material3 1.4.0）沒有 `LocalActivity`，也沒有 `LocalAccessibilityManager.current.isReduceMotionEnabled()`。** 兩者都以 `javap` 從快取的 `ui.aar`／`material3.aar` 查證過：前者根本不存在（`AndroidCompositionLocals_androidKt` 只導出 `getLocalContext`／`getLocalView`／`getLocalLifecycleOwner`…），後者的 `androidx.compose.ui.platform.AccessibilityManager` 介面只剩 `calculateRecommendedTimeoutMillis`。**取 Activity 一律用 `LocalContext.current.asActivity()`（Task 6 定義）；取「降低動態效果」一律用 Task 8 的 `Settings.Global` 動畫縮放係數檢查——**平台也沒有公開的 reduce-motion API**（`javap android-33／36／37.0／37.2` 的 `android.jar`，`AccessibilityManager` 查無任何 reduce／motion 方法，`Settings$Global`／`Settings$Secure` 也沒有 reduce motion 常數）。不要照網路教學寫 `LocalActivity`。**
+- **`androidx.compose.ui.platform`（BOM 2026.09.00 → ui 1.12.1、material3 1.4.0）沒有 `LocalActivity`，也沒有 `LocalAccessibilityManager.current.isReduceMotionEnabled()`。** 兩者都以 `javap` 從快取的 `ui.aar`／`material3.aar` 查證過：前者的 `AndroidCompositionLocals_androidKt` 只導出 `getLocalContext`／`getLocalView`／`getLocalLifecycleOwner`…，後者的 `androidx.compose.ui.platform.AccessibilityManager` 介面只剩 `calculateRecommendedTimeoutMillis`。**取 Activity 一律用 `androidx.activity.compose.LocalActivity`**——本專案已經依賴 `activity-compose:1.13.0`，實測其 `classes.jar` 有 `androidx/activity/compose/LocalActivityKt.class`，`LocalActivity` 是 `ProvidableCompositionLocal<Activity?>`，預設值就是沿 `LocalContext` 的 `ContextWrapper` 鏈找上去，型別 `Activity?`。**取「降低動態效果」一律用 Task 8 的 `Settings.Global` 動畫縮放係數檢查——平台也沒有公開的 reduce-motion API**（`javap android-33／36／37.0／37.2` 的 `android.jar`，`AccessibilityManager` 查無任何 reduce／motion 方法，`Settings$Global`／`Settings$Secure` 也沒有 reduce motion 常數）。
+  > **勘誤（Task 10 Step 8 查證）**：本條原本寫成「本專案的 Compose 沒有 `LocalActivity`，要自己沿 `ContextWrapper` 找」，並在 Task 5 定義了 `fun Context.asActivity(): Activity?`。那是**只查了 `ui.aar`、漏查 `activity-compose` 的誤判**；`LocalActivity` 一直就在相依套件裡。已刪掉 `asActivity()`，三處 call site 改用 `LocalActivity.current`，Task 5／6／7 的程式碼範例與 import 清單同步改正。
 - 規則層（`BannerPolicy`／`SponsorPolicy`）**不得 import 任何 Android 或廣告 SDK 型別**，否則失去 JVM 可測性。
 - 每個 Task 結束都 commit；commit 只在該 Task 的驗證指令實際跑過、且輸出貼進報告之後。
 
@@ -39,7 +40,7 @@
 | Create | `app/src/test/java/com/wenhsiaoyi/jackcompass/ads/BannerPolicyTest.kt` | 橫幅規則接縫 |
 | Create | `app/src/test/java/com/wenhsiaoyi/jackcompass/ads/SponsorPolicyTest.kt` | 贊助規則接縫 |
 | Create | `app/src/main/java/com/wenhsiaoyi/jackcompass/ads/AdBootstrap.kt` | 背景執行緒初始化、裝置雜湊 |
-| Create | `app/src/main/java/com/wenhsiaoyi/jackcompass/ads/AdSession.kt` | 行程層級會話：同意鏈、把政策stage橋接成 Compose State、`Context.asActivity()` |
+| Create | `app/src/main/java/com/wenhsiaoyi/jackcompass/ads/AdSession.kt` | 行程層級會話：同意鏈、把政策stage橋接成 Compose State |
 | Create | `app/src/main/java/com/wenhsiaoyi/jackcompass/ads/AdMobBanner.kt` | 橫幅的 SDK 接觸面 + `BannerHandle` |
 | Create | `app/src/main/java/com/wenhsiaoyi/jackcompass/ads/AdMobInterstitial.kt` | 插屏的 SDK 接觸面 |
 | Create | `app/src/main/java/com/wenhsiaoyi/jackcompass/ui/components/BannerSlot.kt` | `AndroidView` 掛 AdView |
@@ -709,7 +710,7 @@ git commit -m "feat: add sponsor entry tri-state policy as a pure rule layer"
 
 **Interfaces:**
 - Consumes: Task 3 的 `BannerPolicy`、Task 4 的 `SponsorPolicy`（Task 6／7 才把兩者接進 `AdSession`）；Task 1 的 `R.string.admob_app_id`、`R.bool.ads_force_eea_debug`。
-- Produces: `object AdBootstrap { fun initializeOnce(context: Context); fun deviceHash(activity: Activity): String }`（冪等、內部開背景執行緒）；`class AdSession(val banner: BannerPolicy, val sponsor: SponsorPolicy)`，成員 `bannerStage: BannerStage`／`sponsorStage: SponsorStage`（皆是 Compose `State`，UI 只讀這兩個）、`nowMillis: Long`、`runConsentChain(activity)`、`showPrivacyOptionsForm(activity, onDismissed)`、`sync()`／`finish(context, granted)` 為 private，另有 `companion object { fun ensure(): AdSession }`——**行程層級單例**，Activity 重建（切換語系會重建）後同一顆 policy 跟著活著，這是「本次執行只播一次」能撐過語系切換的機制。同檔另有頂層擴充 `fun Context.asActivity(): Activity?`（Task 6／7 用它取 Activity，本專案 Compose 沒有 `LocalActivity`）。
+- Produces: `object AdBootstrap { fun initializeOnce(context: Context); fun deviceHash(activity: Activity): String }`（冪等、內部開背景執行緒）；`class AdSession(val banner: BannerPolicy, val sponsor: SponsorPolicy)`，成員 `bannerStage: BannerStage`／`sponsorStage: SponsorStage`（皆是 Compose `State`，UI 只讀這兩個）、`nowMillis: Long`、`runConsentChain(activity)`、`showPrivacyOptionsForm(activity, onDismissed)`、`sync()`／`finish(context, granted)` 為 private，另有 `companion object { fun ensure(): AdSession }`——**行程層級單例**，Activity 重建（切換語系會重建）後同一顆 policy 跟著活著，這是「本次執行只播一次」能撐過語系切換的機制。取 Activity 由 UI 端用 `androidx.activity.compose.LocalActivity`（見 Global Constraints 的勘誤）。
 
 - [ ] **Step 1: 查一次符號**
 
@@ -757,7 +758,6 @@ package com.wenhsiaoyi.jackcompass.ads
 
 import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -852,19 +852,6 @@ class AdSession(
         }
         sync()
     }
-}
-
-/**
- * 本專案的 Compose 沒有 LocalActivity（見 Global Constraints），只能沿 Context 鏈往上找。
- * AppCompat 會包一層 ContextWrapper，所以必須走 baseContext，不能直接 as Activity。
- */
-fun Context.asActivity(): Activity? {
-    var ctx: Context = this
-    while (ctx is ContextWrapper) {
-        if (ctx is Activity) return ctx
-        ctx = ctx.baseContext
-    }
-    return null
 }
 ```
 
@@ -1109,8 +1096,7 @@ fun BannerSlot(session: AdSession, modifier: Modifier = Modifier) {
 `app/src/main/java/com/wenhsiaoyi/jackcompass/ui/JackCompassApp.kt`：`fun JackCompassApp(session: AdSession)` 開頭（第 73 行附近）加：
 
 ```kotlin
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val activity = context.asActivity()
+    val activity = androidx.activity.compose.LocalActivity.current
     androidx.compose.runtime.LaunchedEffect(session, activity) {
         if (activity == null) return@LaunchedEffect
         while (isActive &&
@@ -1124,7 +1110,7 @@ fun BannerSlot(session: AdSession, modifier: Modifier = Modifier) {
     }
 ```
 
-需要 `import com.wenhsiaoyi.jackcompass.ads.AdSession`、`ads.BannerStage`、`ads.asActivity`。
+需要 `import androidx.activity.compose.LocalActivity`、`com.wenhsiaoyi.jackcompass.ads.AdSession`、`ads.BannerStage`。
 
 **這個迴圈不能寫成 `while (session.bannerVisible)`**：啟動時 stage 是 `AwaitingConsent`，那種寫法迴圈一次都不進，同意鏈跑完後也沒人去請求。必須輪詢到 `Collapsed`／`Suppressed` 才退出；重組與否由 `bannerStage` 這個 State 負責。
 
@@ -1330,7 +1316,7 @@ private fun RowCard(
 private fun SponsorSection(session: AdSession) {
     val stage = session.sponsorStage          // Compose State：政策一變在這裡重組
     if (stage == SponsorStage.Hidden) return
-    val activity = LocalContext.current.asActivity() ?: return
+    val activity = LocalActivity.current ?: return
     SectionLabel(R.string.settings_sponsor_section)
     Spacer(Modifier.height(12.dp))
     RowCard(
@@ -1354,7 +1340,7 @@ private fun SponsorSection(session: AdSession) {
 
 @Composable
 private fun AdSettingsSection(session: AdSession) {
-    val activity = LocalContext.current.asActivity() ?: return
+    val activity = LocalActivity.current ?: return
     SectionLabel(R.string.settings_ads_section)
     Spacer(Modifier.height(12.dp))
     // 即使使用者拒絕同意也要留著：這是規範區事後改同意的唯一入口。
@@ -1368,7 +1354,7 @@ private fun AdSettingsSection(session: AdSession) {
 
 `Playing` 階段對應到 `settings_sponsor_ready`：全螢幕廣告蓋住整個 App 時這段文字根本看不到，插屏關掉後 stage 立刻回到 `Ready`。
 
-本檔要新增的 import：`androidx.annotation.StringRes`、`androidx.compose.foundation.clickable`、`androidx.compose.foundation.layout.Box`、`androidx.compose.foundation.shape.RoundedCornerShape`、`androidx.compose.ui.draw.clip`、`androidx.compose.ui.platform.LocalContext`、`com.wenhsiaoyi.jackcompass.ads.AdSession`、`com.wenhsiaoyi.jackcompass.ads.SponsorStage`、`com.wenhsiaoyi.jackcompass.ads.asActivity`。已有的 `background`／`Column`／`Spacer`／`height`／`fillMaxWidth`／`padding`／`stringResource`／`DialFace`／`DialText` 沿用；`DialTick` 在 `ui/theme/Color.kt:16`，要另外 import。
+本檔要新增的 import：`androidx.activity.compose.LocalActivity`、`androidx.annotation.StringRes`、`androidx.compose.foundation.clickable`、`androidx.compose.foundation.layout.Box`、`androidx.compose.foundation.shape.RoundedCornerShape`、`androidx.compose.ui.draw.clip`、`com.wenhsiaoyi.jackcompass.ads.AdSession`、`com.wenhsiaoyi.jackcompass.ads.SponsorStage`。已有的 `background`／`Column`／`Spacer`／`height`／`fillMaxWidth`／`padding`／`stringResource`／`DialFace`／`DialText` 沿用；`DialTick` 在 `ui/theme/Color.kt:16`，要另外 import。
 
 - [ ] **Step 4: 補英文鍵**
 
@@ -1832,7 +1818,7 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump resources app\build\outputs\apk
 
 - [ ] **Step 8: 更新文件**
 
-`AGENTS.md`：架構節加 `ads/` 兩截式說明（`BannerPolicy`／`SponsorPolicy` 是第二條純函式接縫，`AdMobBanner`／`AdMobInterstitial`／`AdBootstrap`／`AdSession` 是唯一接觸 SDK 之處）；測試落差節把「只有 sensor/ 這一條接縫」改成兩條；已知事項加兩條——「開發期間不得點自己的廣告」、「本專案 Compose 沒有 `LocalActivity`，取 Activity 走 `Context.asActivity()`；平台也沒有公開的 reduce-motion API（`AccessibilityManager` 查無相關方法），「降低動態效果」靠 `Settings.Global` 的 `ANIMATOR_DURATION_SCALE`／`TRANSITION_ANIMATION_SCALE` 是否歸零判定」；工具鏈陷阱節加 `GRADLE_USER_HOME=E:\gradle-home`。改完重新產生 `docs/AGENTS.html`。`README.md` 功能清單加廣告與贊助入口。
+`AGENTS.md`：架構節加 `ads/` 兩截式說明（`BannerPolicy`／`SponsorPolicy` 是第二條純函式接縫，`AdMobBanner`／`AdMobInterstitial`／`AdBootstrap`／`AdSession` 是唯一接觸 SDK 之處）；測試落差節把「只有 sensor/ 這一條接縫」改成兩條；已知事項加兩條——「開發期間不得點自己的廣告」、「取 Activity 用 `androidx.activity.compose.LocalActivity`（`compose-ui` 本身沒有，是 `activity-compose:1.13.0` 提供）；平台沒有公開的 reduce-motion API（`AccessibilityManager` 查無相關方法），「降低動態效果」靠 `Settings.Global` 的 `ANIMATOR_DURATION_SCALE`／`TRANSITION_ANIMATION_SCALE` 是否歸零判定」；工具鏈陷阱節加 `GRADLE_USER_HOME=E:\gradle-home`。改完重新產生 `docs/AGENTS.html`。`README.md` 功能清單加廣告與贊助入口。
 
 - [ ] **Step 9: 列出需要使用者在網頁上做的事（原封不動照 spec「上架前清單」）**
 

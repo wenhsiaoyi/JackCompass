@@ -2,7 +2,6 @@ package com.wenhsiaoyi.jackcompass.ads
 
 import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -168,17 +167,4 @@ class AdSession(
         @Synchronized
         fun ensure(): AdSession = instance ?: AdSession().also { instance = it }
     }
-}
-
-/**
- * 本專案的 Compose 沒有 LocalActivity（見 Global Constraints），只能沿 Context 鏈往上找。
- * AppCompat 會包一層 ContextWrapper，所以必須走 baseContext，不能直接 as Activity。
- */
-fun Context.asActivity(): Activity? {
-    var ctx: Context = this
-    while (ctx is ContextWrapper) {
-        if (ctx is Activity) return ctx
-        ctx = ctx.baseContext
-    }
-    return null
 }

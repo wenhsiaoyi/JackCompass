@@ -1,5 +1,6 @@
 package com.wenhsiaoyi.jackcompass.ui
 
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,7 +32,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.wenhsiaoyi.jackcompass.ads.AdSession
 import com.wenhsiaoyi.jackcompass.ads.BannerStage
-import com.wenhsiaoyi.jackcompass.ads.asActivity
 import com.wenhsiaoyi.jackcompass.R
 import com.wenhsiaoyi.jackcompass.ui.components.BannerSlot
 import com.wenhsiaoyi.jackcompass.ui.components.SponsorThanksOverlay
@@ -85,8 +84,7 @@ private fun NavHostController.selectTab(route: String) {
 
 @Composable
 fun JackCompassApp(session: AdSession) {
-    val context = LocalContext.current
-    val activity = context.asActivity()
+    val activity = LocalActivity.current
     LaunchedEffect(session, activity) {
         if (activity == null) return@LaunchedEffect
         while (isActive &&
