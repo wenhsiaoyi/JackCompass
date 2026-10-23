@@ -108,6 +108,7 @@ Single-context: one `GLOSSARY.md` plus `docs/adr/` at the repo root. See `docs/a
 .\gradlew.bat installDebug         # 裝到已連接的裝置／emulator
 .\gradlew.bat lint                 # 靜態檢查
 .\gradlew.bat test                 # JVM 單元測試（sensor/ 與 ads/ 的純函式）
+.\gradlew.bat bundleRelease        # 產出 AAB（根目錄有 keystore.properties 時才是已簽章的）
 ```
 
 **一律用 `.\gradlew.bat`，不要用 PATH 上的 `gradle`。** 見下方工具鏈說明。
@@ -165,6 +166,11 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
   做成 process 層單例——`AppCompatDelegate.setApplicationLocales` 會重建 Activity，廣告進度不能跟著被重置。
   橫幅每次執行只載入一次、顯示 30 秒後收起；插屏只從設定頁的贊助入口播，不自動播。
   任何廣告請求之前都要先過 UMP 同意鏈（`runConsentChain`），閘門只認 `canRequestAds()`。
+  但 `canRequestAds()` 只是其中一扇門：`MobileAds.initialize` 是背景執行緒上的異步工作，
+  **呼叫出去不等於就緒**，政策要等它的初始化回呼（`AdBootstrap.initializeOnce(context, onReady)`）
+  才放行——`BannerPolicy` 與 `SponsorPolicy` 各有一扇獨立的 `sdkReady` 閘門。
+  實測（2026-10-23）沒等回呼就發橫幅請求會 `IllegalStateException: MobileAds.initialize must be
+  called before using the Google Mobile Ads SDK` 直接當掉，而且是競態：只在同意表單剛關閉那一次撞到。
   實測（2026-10-23 實機）使用者按「Do not consent」時它**仍回 true**——Google 退回非個人化廣告，
   所以拒絕後橫幅與贊助列照樣出現；**已裁決維持這個行為**，AdMob 後台不要改成「拒絕時不投放廣告」。
   `canRequestAds()` 回 false 時橫幅不出現、贊助列隱藏，但「調整廣告同意選項」那一列**永遠可見**。
@@ -207,6 +213,16 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
 - `.\gradlew.bat lint` 目前會失敗，3 個 error 都是經緯度之前就存在的問題、尚未處理：
   指南針刻度震動用的 `VibrationEffect.createOneShot`／`Vibrator.vibrate` 要 API 26，而 minSdk 是 24
   （API 24/25 上按到震動會當），另外 `app_name` 未翻譯成 zh。
+  但 2026-10-23 實測：**這三條不擋上架產出**——`bundleRelease` 帶著它們照樣 BUILD SUCCESSFUL，
+  `lintVitalRelease` 只擋 fatal 級。要處理的是那兩條 `NewApi` 的實際 crash，不是 lint 乾淨與否。
+- **簽章材料是機器本地的，絕對不要 commit**：`app/upload-keystore.jks` 與根目錄 `keystore.properties`
+  都在 `.gitignore` 裡（`*.jks`／`keystore.properties`）。這把金鑰**只是 upload key**——走 Play App Signing，
+  app signing key 由 Google 保管，所以密碼或檔案遺失可以在 Play Console 重置 upload key，不會丟掉這款 App。
+  `app/build.gradle.kts` 只在 `keystore.properties` 存在時才建立 `upload` signingConfig，
+  缺檔時 release 仍會建置成功、只是產出未簽章的 AAB（換機器不會被卡住）。
+  驗證簽章與驗證廣告 ID 同義，都要查**產物**：AAB 頂層要有 `META-INF/UPLOAD.SF`／`UPLOAD.RSA`，
+  且 `UPLOAD.RSA` 裡的證書 SHA-256 要跟 `keytool -exportcert` 從 keystore 導出的一致。
+  **跑過「把 keystore.properties 改名」那種驗證後，盤上的 AAB 會變成未簽章版**，要重跑 `bundleRelease`。
 - 專案沒有設定任何 branch / PR / 發布流程，沿用使用者預設。
 - **開發期間不得點自己的廣告。** AdMob 會把開發者自己點自己廣告判成無效流量，嚴重者停權；
   程式碼與資源檔裡只允許 Google 官方測試 ID，正式 ID 只放在 `app/src/main/res/values/ads.xml`，
