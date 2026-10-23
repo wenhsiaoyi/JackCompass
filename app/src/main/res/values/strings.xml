@@ -31,6 +31,9 @@
     <string name="settings_ads_section">Ad settings</string>
     <string name="settings_ads_privacy">Adjust ad consent options</string>
 
+    <string name="sponsor_thanks_title">Thanks for your support</string>
+    <string name="sponsor_thanks_body">Your support keeps this tool free</string>
+
     <!-- 羅盤盤面四正方位，順序固定為 N / E / S / W -->
     <string-array name="dial_cardinals">
         <item>N</item>

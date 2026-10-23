@@ -3,6 +3,7 @@ package com.wenhsiaoyi.jackcompass.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -11,8 +12,12 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +35,7 @@ import com.wenhsiaoyi.jackcompass.ads.BannerStage
 import com.wenhsiaoyi.jackcompass.ads.asActivity
 import com.wenhsiaoyi.jackcompass.R
 import com.wenhsiaoyi.jackcompass.ui.components.BannerSlot
+import com.wenhsiaoyi.jackcompass.ui.components.SponsorThanksOverlay
 import com.wenhsiaoyi.jackcompass.ui.compass.CompassScreen
 import com.wenhsiaoyi.jackcompass.ui.level.LevelScreen
 import com.wenhsiaoyi.jackcompass.ui.settings.SettingsScreen
@@ -97,53 +103,66 @@ fun JackCompassApp(session: AdSession) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
-    Scaffold(
-        bottomBar = {
-            Column {
-                BannerSlot(session = session)
-                NavigationBar {
-                    ToolDestination.entries.forEach { destination ->
-                        val selected = currentDestination
-                            ?.hierarchy
-                            ?.any { it.route == destination.route } == true
+    var showThanks by remember { mutableStateOf(false) }
+    DisposableEffect(session) {
+        session.onSponsorDismissed = { showThanks = true }
+        onDispose { session.onSponsorDismissed = null }
+    }
 
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { navController.selectTab(destination.route) },
-                            icon = {},
-                            label = { Text(stringResource(destination.labelRes)) },
+    // 感謝動畫要連導覽列一起蓋住，所以覆蓋層放在 Scaffold 外面
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            bottomBar = {
+                Column {
+                    BannerSlot(session = session)
+                    NavigationBar {
+                        ToolDestination.entries.forEach { destination ->
+                            val selected = currentDestination
+                                ?.hierarchy
+                                ?.any { it.route == destination.route } == true
+
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = { navController.selectTab(destination.route) },
+                                icon = {},
+                                label = { Text(stringResource(destination.labelRes)) },
+                            )
+                        }
+                    }
+                }
+            },
+        ) { innerPadding ->
+            val onSettings = currentDestination?.hierarchy?.any { it.route == SETTINGS_ROUTE } == true
+
+            Box(modifier = Modifier.padding(innerPadding)) {
+                NavHost(
+                    navController = navController,
+                    startDestination = ToolDestination.Compass.route,
+                ) {
+                    composable(ToolDestination.Compass.route) { CompassScreen() }
+                    composable(ToolDestination.Level.route) { LevelScreen() }
+                    composable(SETTINGS_ROUTE) { SettingsScreen(session = session) }
+                }
+
+                // 右上齒輪：任何分頁都能進設定；設定頁本身不重複顯示
+                if (!onSettings) {
+                    IconButton(
+                        onClick = { navController.navigate(SETTINGS_ROUTE) },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_settings),
+                            contentDescription = stringResource(R.string.settings_open),
                         )
                     }
                 }
             }
-        },
-    ) { innerPadding ->
-        val onSettings = currentDestination?.hierarchy?.any { it.route == SETTINGS_ROUTE } == true
+        }
 
-        Box(modifier = Modifier.padding(innerPadding)) {
-            NavHost(
-                navController = navController,
-                startDestination = ToolDestination.Compass.route,
-            ) {
-                composable(ToolDestination.Compass.route) { CompassScreen() }
-                composable(ToolDestination.Level.route) { LevelScreen() }
-                composable(SETTINGS_ROUTE) { SettingsScreen(session = session) }
-            }
-
-            // 右上齒輪：任何分頁都能進設定；設定頁本身不重複顯示
-            if (!onSettings) {
-                IconButton(
-                    onClick = { navController.navigate(SETTINGS_ROUTE) },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_settings),
-                        contentDescription = stringResource(R.string.settings_open),
-                    )
-                }
-            }
+        if (showThanks) {
+            SponsorThanksOverlay(onFinished = { showThanks = false })
         }
     }
 }

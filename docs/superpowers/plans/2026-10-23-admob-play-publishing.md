@@ -22,7 +22,7 @@
 - 開發期間**只允許使用 Google 官方測試 ID**（debug 構型自動覆寫），不得點自己的真廣告：AdMob 會判無效流量，嚴重者停權。
 - 中文文案依 `.agents/tw-translate/`（先讀 `SKILL.md`）：zh-TW 用「橫幅廣告」「插屏廣告」「設定」「資料」；品牌名 AdMob／Google 保留英文；中英間加半形空格；標點全形；介面文案不用行銷口吻。
 - 底部導覽列**不加 icon**（`material-icons-*` 已停更，是專案刻意事項）。
-- **本專案的 Compose（BOM 2026.09.00 → ui 1.12.1、material3 1.4.0）沒有 `LocalActivity`，也沒有 `LocalAccessibilityManager.current.isReduceMotionEnabled()`。** 兩者都以 `javap` 從快取的 `ui.aar`／`material3.aar` 查證過：前者根本不存在（`AndroidCompositionLocals_androidKt` 只導出 `getLocalContext`／`getLocalView`／`getLocalLifecycleOwner`…），後者的 `androidx.compose.ui.platform.AccessibilityManager` 介面只剩 `calculateRecommendedTimeoutMillis`。**取 Activity 一律用 `LocalContext.current.asActivity()`（Task 6 定義）；取「降低動態效果」一律用 Task 8 的 API 33 平台檢查。不要照網路教學寫 `LocalActivity`。**
+- **本專案的 Compose（BOM 2026.09.00 → ui 1.12.1、material3 1.4.0）沒有 `LocalActivity`，也沒有 `LocalAccessibilityManager.current.isReduceMotionEnabled()`。** 兩者都以 `javap` 從快取的 `ui.aar`／`material3.aar` 查證過：前者根本不存在（`AndroidCompositionLocals_androidKt` 只導出 `getLocalContext`／`getLocalView`／`getLocalLifecycleOwner`…），後者的 `androidx.compose.ui.platform.AccessibilityManager` 介面只剩 `calculateRecommendedTimeoutMillis`。**取 Activity 一律用 `LocalContext.current.asActivity()`（Task 6 定義）；取「降低動態效果」一律用 Task 8 的 `Settings.Global` 動畫縮放係數檢查——**平台也沒有公開的 reduce-motion API**（`javap android-33／36／37.0／37.2` 的 `android.jar`，`AccessibilityManager` 查無任何 reduce／motion 方法，`Settings$Global`／`Settings$Secure` 也沒有 reduce motion 常數）。不要照網路教學寫 `LocalActivity`。**
 - 規則層（`BannerPolicy`／`SponsorPolicy`）**不得 import 任何 Android 或廣告 SDK 型別**，否則失去 JVM 可測性。
 - 每個 Task 結束都 commit；commit 只在該 Task 的驗證指令實際跑過、且輸出貼進報告之後。
 
@@ -1433,8 +1433,7 @@ git commit -m "feat: add the sponsor interstitial entry and ad consent row to se
 ```kotlin
 package com.wenhsiaoyi.jackcompass.ui.components
 
-import android.os.Build
-import android.view.accessibility.AccessibilityManager
+import android.provider.Settings
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -1480,25 +1479,28 @@ import kotlinx.coroutines.delay
  * 時序對應設計基準圖格 2：0.0s 淡入 → 0.5s 縮放到 1.0 → 1.6s 後淡出。
  * 這段動畫不解鎖任何功能、不寫入任何「已贊助」狀態。
  */
-private const val FADE_IN_MS = 300L
-private const val SCALE_MS = 500L
+private const val FADE_IN_MS = 300
+private const val SCALE_MS = 500
 private const val HOLD_MS = 1_600L
-private const val FADE_OUT_MS = 300L
+private const val FADE_OUT_MS = 300
 
 /**
- * 「降低動態效果」在本專案的 Compose 沒有對應的 Local（見 Global Constraints，
- * 已用 javap 從快取的 ui.aar 查證），只能走平台 API，而它是 API 33 才有。
- * 24–32 一律回傳 false：那些系統根本沒有這個開關，spec 那條要求對它們不成立，
- * 不是漏實作。
+ * 「降低動態效果」的偵測。
+ *
+ * 本專案假定過的 `AccessibilityManager.isReducedMotionSettingEnabled()` **不存在**：
+ * 已用 javap 查證 android-33／36／37.0／37.2 的 `android.jar`，`AccessibilityManager`
+ * 沒有任何 reduce／motion 相關方法（連 `Settings.Global`／`Settings$Secure` 都沒有
+ * reduce motion 常數）。系統那個開關（設定 → 無障礙 → 視覺效果 → 移除動畫）對 App
+ * 可見的訊號是 `Settings.Global` 的動畫縮放係數歸零，所以讀它；兩個常數自 API 17
+ * 起公開，minSdk 24 全覆蓋。
  */
 @Composable
 private fun isReduceMotionEnabled(): Boolean {
-    val context = LocalContext.current
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        context.getSystemService(AccessibilityManager::class.java)?.isReducedMotionSettingEnabled == true
-    } else {
-        false
-    }
+    val resolver = LocalContext.current.contentResolver
+    return runCatching {
+        Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f ||
+            Settings.Global.getFloat(resolver, Settings.Global.TRANSITION_ANIMATION_SCALE, 1f) == 0f
+    }.getOrDefault(false)
 }
 
 @Composable
@@ -1508,12 +1510,12 @@ fun SponsorThanksOverlay(onFinished: () -> Unit, modifier: Modifier = Modifier) 
 
     val alpha by animateFloatAsState(
         targetValue = if (entered) 1f else 0f,
-        animationSpec = tween(if (reduceMotion) 0L else FADE_IN_MS),
+        animationSpec = tween(if (reduceMotion) 0 else FADE_IN_MS),
         label = "thanksAlpha",
     )
     val scale by animateFloatAsState(
         targetValue = if (entered && !reduceMotion) 1f else 0.8f,
-        animationSpec = tween(if (reduceMotion) 0L else SCALE_MS),
+        animationSpec = tween(if (reduceMotion) 0 else SCALE_MS),
         label = "thanksScale",
     )
 
@@ -1521,7 +1523,7 @@ fun SponsorThanksOverlay(onFinished: () -> Unit, modifier: Modifier = Modifier) 
         entered = true
         delay(HOLD_MS)
         entered = false
-        delay(if (reduceMotion) 0L else FADE_OUT_MS)
+        delay(if (reduceMotion) 0L else FADE_OUT_MS.toLong())
         onFinished()
     }
 
@@ -1830,7 +1832,7 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump resources app\build\outputs\apk
 
 - [ ] **Step 8: 更新文件**
 
-`AGENTS.md`：架構節加 `ads/` 兩截式說明（`BannerPolicy`／`SponsorPolicy` 是第二條純函式接縫，`AdMobBanner`／`AdMobInterstitial`／`AdBootstrap`／`AdSession` 是唯一接觸 SDK 之處）；測試落差節把「只有 sensor/ 這一條接縫」改成兩條；已知事項加兩條——「開發期間不得點自己的廣告」、「本專案 Compose 沒有 `LocalActivity`／`isReduceMotionEnabled()`，取 Activity 走 `Context.asActivity()`」；工具鏈陷阱節加 `GRADLE_USER_HOME=E:\gradle-home`。改完重新產生 `docs/AGENTS.html`。`README.md` 功能清單加廣告與贊助入口。
+`AGENTS.md`：架構節加 `ads/` 兩截式說明（`BannerPolicy`／`SponsorPolicy` 是第二條純函式接縫，`AdMobBanner`／`AdMobInterstitial`／`AdBootstrap`／`AdSession` 是唯一接觸 SDK 之處）；測試落差節把「只有 sensor/ 這一條接縫」改成兩條；已知事項加兩條——「開發期間不得點自己的廣告」、「本專案 Compose 沒有 `LocalActivity`，取 Activity 走 `Context.asActivity()`；平台也沒有公開的 reduce-motion API（`AccessibilityManager` 查無相關方法），「降低動態效果」靠 `Settings.Global` 的 `ANIMATOR_DURATION_SCALE`／`TRANSITION_ANIMATION_SCALE` 是否歸零判定」；工具鏈陷阱節加 `GRADLE_USER_HOME=E:\gradle-home`。改完重新產生 `docs/AGENTS.html`。`README.md` 功能清單加廣告與贊助入口。
 
 - [ ] **Step 9: 列出需要使用者在網頁上做的事（原封不動照 spec「上架前清單」）**
 
