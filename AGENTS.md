@@ -164,8 +164,10 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
   `AdSession` 把兩個 policy 的階段鏡射進 `mutableStateOf` 讓 Compose 觀察，並用 `AdSession.ensure()`
   做成 process 層單例——`AppCompatDelegate.setApplicationLocales` 會重建 Activity，廣告進度不能跟著被重置。
   橫幅每次執行只載入一次、顯示 30 秒後收起；插屏只從設定頁的贊助入口播，不自動播。
-  任何廣告請求之前都要先過 UMP 同意鏈（`runConsentChain`），拒絕同意時橫幅不出現、贊助列隱藏，
-  但「調整廣告同意選項」那一列**永遠可見**。
+  任何廣告請求之前都要先過 UMP 同意鏈（`runConsentChain`），閘門只認 `canRequestAds()`。
+  實測（2026-10-23 實機）使用者按「Do not consent」時它**仍回 true**——Google 退回非個人化廣告，
+  所以拒絕後橫幅與贊助列照樣出現；**已裁決維持這個行為**，AdMob 後台不要改成「拒絕時不投放廣告」。
+  `canRequestAds()` 回 false 時橫幅不出現、贊助列隱藏，但「調整廣告同意選項」那一列**永遠可見**。
 - `ui/theme/`：Material 3 + API 31 以上動態取色；盤面另用固定深色色板（`DialScreen`／`CompassOrange`／`LevelGreen`…），刻意不跟動態取色
 - 語系檔：`values/`（英文，預設）、`values-zh-rTW/`、`values-zh-rCN/`；系統 App 語言清單在 `res/xml/locales_config.xml`
 - 原始碼放在 **`app/src/main/java/`**（AGP 內建 Kotlin 的預設路徑，同時相容 Java 檔案）
@@ -210,6 +212,13 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
   程式碼與資源檔裡只允許 Google 官方測試 ID，正式 ID 只放在 `app/src/main/res/values/ads.xml`，
   debug 構型由 `app/src/debug/res/values/ads.xml` 覆寫成測試 ID＋EEA 除錯地區。
   廣告單元 ID 不是機密，可以 commit。
+- **UMP 4.0 有兩個不會報錯的坑**（實測踩過，兩邊都讓同意表單永遠不出現）：
+  它只從 manifest 的 `com.google.android.gms.ads.APPLICATION_ID` 讀 App ID，Next-Gen
+  `InitializationConfig.Builder(appId)` 不會餵給它；而 EEA 除錯地區只認
+  `addTestDeviceHashedId` 清單內的裝置，那組 32 碼大寫 hex 是 Google 算的，**用 `ANDROID_ID`
+  做 MD5／SHA-1／SHA-256 都對不出來**，只能從 logcat 抄進 `app/src/debug/res/values/ads.xml`。
+  更糟的是這兩個坑**不擋廣告**：表單沒出現時 `canRequestAds()` 仍回 true、廣告照播，
+  等於靜默違反同意政策。改動 `ads/` 之後一定要在實機看一次表單真的出現。
 - 取 Activity 一律用 `androidx.activity.compose.LocalActivity`（`LocalActivity.current`，型別 `Activity?`）。
   它**不在 `compose-ui`**——`AndroidCompositionLocals_androidKt` 沒有 `getLocalActivity`，是
   `androidx.activity:activity-compose` 提供的；只查 `ui.aar` 會誤判成「本專案沒有」，這是踩過的坑。

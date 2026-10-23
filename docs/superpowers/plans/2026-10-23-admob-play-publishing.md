@@ -1804,7 +1804,7 @@ grep -rn "9662224353354096" app/src/main/java/ app/src/debug/ || echo "OK: 正�
 
 debug 構型的 `ads_force_eea_debug=true` 已是 EEA。確認 AdMob 後台已建立並發布同意訊息，否則表單永遠不出現、回呼直接往下走，會被誤判成整合失敗。驗三件事：首次啟動出現表單；拒絕後橫幅整場不出現、贊助列隱藏、**「調整廣告同意選項」仍可見**；按它能重新開表單。
 
-實測（2026-10-23）：首次啟動出現表單 ✓（前提是把 logcat 給的 hashed id 填進 `app/src/debug/res/values/ads.xml`，沒註冊時 `IABTCF_gdprApplies` 是 0、表單不出現）；「調整廣告同意選項」能重新開表單 ✓；但**第二件事不成立**——清掉 UMP 的 SharedPreferences 重跑、在表單按「Do not consent」（存進去的是 `IABTCF_PurposeConsents = 00000000000`）之後，`canRequestAds()` 仍回 true，橫幅換成非個人化測試素材照樣出現、贊助列也仍在。閘門本身沒寫錯，是「拒絕 = 沒廣告」這個開關在 AdMob 後台的同意訊息設定裡。細節與裁決見 spec「同意鏈」與「上架前清單」。另外：首次啟動是 GPS 權限對話框先於同意表單。
+實測（2026-10-23）：首次啟動出現表單 ✓（前提是把 logcat 給的 hashed id 填進 `app/src/debug/res/values/ads.xml`，沒註冊時 `IABTCF_gdprApplies` 是 0、表單不出現）；「調整廣告同意選項」能重新開表單 ✓；但**第二件事不成立**——清掉 UMP 的 SharedPreferences 重跑、在表單按「Do not consent」（存進去的是 `IABTCF_PurposeConsents = 00000000000`）之後，`canRequestAds()` 仍回 true，橫幅換成非個人化測試素材照樣出現、贊助列也仍在。閘門本身沒寫錯，是「拒絕 = 沒廣告」這個開關在 AdMob 後台的同意訊息設定裡。**使用者已裁決維持現狀**（拒絕者仍看非個人化廣告，換收入），細節見 spec「同意鏈」與「上架前清單」。另外：首次啟動是 GPS 權限對話框先於同意表單，順序暫不調整。
 
 - [x] **Step 6: 驗全螢幕廣告關閉後的版面（spec 風險 3）**
 
