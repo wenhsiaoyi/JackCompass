@@ -28,9 +28,17 @@ class SponsorPolicy {
     var stage: SponsorStage = SponsorStage.Hidden
         private set
 
-    val isRowVisible: Boolean get() = stage != SponsorStage.Hidden
+    /** SDK 初始化完成的旗標；`MobileAds.initialize` 跑完前碰 SDK 會當。 */
+    private var sdkReady = false
+
+    val isRowVisible: Boolean get() = sdkReady && stage != SponsorStage.Hidden
 
     val isBusy: Boolean get() = stage == SponsorStage.Preparing || stage == SponsorStage.Playing
+
+    /** 由 SDK 接觸面在 `MobileAds.initialize` 完成時回報。 */
+    fun onSdkReady() {
+        sdkReady = true
+    }
 
     fun onConsentGranted() {
         if (stage == SponsorStage.Hidden) stage = SponsorStage.Ready
@@ -42,6 +50,7 @@ class SponsorPolicy {
 
     /** 回傳 true 代表包裝層這一次**允許**向 SDK 請求並呈現插屏。 */
     fun onClick(): Boolean {
+        if (!sdkReady) return false
         if (stage != SponsorStage.Ready && stage != SponsorStage.Unavailable) return false
         stage = SponsorStage.Preparing
         return true

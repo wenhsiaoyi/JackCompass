@@ -11,6 +11,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -107,9 +109,20 @@ fun JackCompassApp(session: AdSession) {
         onDispose { session.onSponsorDismissed = null }
     }
 
+    // 隱私選項表單失敗時要讓使用者看見（非規範區按下去不會有表單）
+    val snackbarHostState = remember { SnackbarHostState() }
+    val privacyOptionsRes = session.privacyOptionsSnackbarRes
+    val privacyOptionsText = if (privacyOptionsRes != null) stringResource(privacyOptionsRes) else null
+    LaunchedEffect(privacyOptionsText) {
+        val message = privacyOptionsText ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        session.clearPrivacyOptionsSnackbar()
+    }
+
     // 感謝動畫要連導覽列一起蓋住，所以覆蓋層放在 Scaffold 外面
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
                 Column {
                     BannerSlot(session = session)

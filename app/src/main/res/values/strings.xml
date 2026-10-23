@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 預設語系：英文（非中文裝置一律走到這裡） -->
 <resources>
-    <string name="app_name">JackCompass</string>
+    <string name="app_name">Jack\'s Compass</string>
 
     <string name="tab_compass">Compass</string>
     <string name="tab_level">Level</string>
@@ -30,6 +30,8 @@
     <string name="settings_sponsor_unavailable">No ad available right now</string>
     <string name="settings_ads_section">Ad settings</string>
     <string name="settings_ads_privacy">Adjust ad consent options</string>
+    <string name="settings_ads_form_unavailable">No ad consent options are available in your region</string>
+    <string name="settings_ads_form_failed">Unable to load the ad consent options. Please try again later.</string>
 
     <string name="sponsor_thanks_title">Thanks for your support</string>
     <string name="sponsor_thanks_body">Your support keeps this tool free</string>

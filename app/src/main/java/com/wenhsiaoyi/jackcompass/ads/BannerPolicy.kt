@@ -34,10 +34,21 @@ class BannerPolicy(private val durationMillis: Long = BANNER_VISIBLE_DURATION_MS
 
     private var shownAtMillis: Long? = null
 
+    /** SDK 初始化完成的旗標；`MobileAds.initialize` 跑完前碰 SDK 會當。 */
+    private var sdkReady = false
+
     val isVisible: Boolean get() = stage == BannerStage.Showing
 
-    /** 包裝層只在此值為 true 時向 SDK 要廣告，因此一次執行只會要一次。 */
-    val mayRequestAd: Boolean get() = stage == BannerStage.Loading
+    /**
+     * 包裝層只在此值為 true 時向 SDK 要廣告，因此一次執行只會要一次。
+     * 同意與 SDK 就緒是兩個獨立閘門，缺一個都不能發請求。
+     */
+    val mayRequestAd: Boolean get() = stage == BannerStage.Loading && sdkReady
+
+    /** 由 SDK 接觸面在 `MobileAds.initialize` 完成時回報。 */
+    fun onSdkReady() {
+        sdkReady = true
+    }
 
     fun onConsentGranted() {
         if (stage == BannerStage.AwaitingConsent) stage = BannerStage.Loading

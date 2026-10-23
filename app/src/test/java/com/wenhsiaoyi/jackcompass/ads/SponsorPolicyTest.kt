@@ -22,8 +22,30 @@ class SponsorPolicyTest {
     }
 
     @Test
-    fun `通過同意後進入可點狀態`() {
+    fun `通過同意但 SDK 還沒初始化完，贊助列不出現也不給按`() {
+        // 插屏與橫幅碰同一個坑：MobileAds.initialize 還沒跑完就請求，SDK 直接丟
+        // IllegalStateException；這一列在就緒前必須既看不見也按不下去。
         val policy = SponsorPolicy()
+        policy.onConsentGranted()
+        assertFalse(policy.isRowVisible)
+        assertFalse("未就緒時按下不允许碰 SDK", policy.onClick())
+        assertEquals(SponsorStage.Ready, policy.stage)
+    }
+
+    @Test
+    fun `SDK 就緒後才放行，且先前被擋掉的點擊不留痕跡`() {
+        val policy = SponsorPolicy()
+        policy.onConsentGranted()
+        policy.onClick()
+        policy.onSdkReady()
+        assertTrue(policy.isRowVisible)
+        assertTrue("未就緒那次沒把狀態推去準備中", policy.onClick())
+    }
+
+    @Test
+    fun `同意且 SDK 就緒後進入可點狀態`() {
+        val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         assertEquals(SponsorStage.Ready, policy.stage)
         assertTrue(policy.isRowVisible)
@@ -33,6 +55,7 @@ class SponsorPolicyTest {
     @Test
     fun `拒絕同意時整列藏起來`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         policy.onConsentDenied()
         assertEquals(SponsorStage.Hidden, policy.stage)
@@ -42,6 +65,7 @@ class SponsorPolicyTest {
     @Test
     fun `按下進入準備中並回傳允許請求`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         assertTrue(policy.onClick())
         assertEquals(SponsorStage.Preparing, policy.stage)
@@ -51,6 +75,7 @@ class SponsorPolicyTest {
     @Test
     fun `準備中重複點擊不被允許，也不會把請求排成隊`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         policy.onClick()
         assertFalse(policy.onClick())
@@ -61,6 +86,7 @@ class SponsorPolicyTest {
     @Test
     fun `廣告呈現期間重複點擊不被允許`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         policy.onClick()
         policy.onAdShown()
@@ -72,6 +98,7 @@ class SponsorPolicyTest {
     @Test
     fun `關掉廣告後回到可點，不設次數上限`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         repeat(3) {
             assertTrue("第 ${it + 1} 次都該允許", policy.onClick())
@@ -84,6 +111,7 @@ class SponsorPolicyTest {
     @Test
     fun `載入不到廣告時暫時沒有，之後還能再點`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         policy.onClick()
         policy.onAdUnavailable()
@@ -97,6 +125,7 @@ class SponsorPolicyTest {
     @Test
     fun `呈現失敗走暫時沒有，且不會進到播放中`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         policy.onClick()
         policy.onAdShown()
@@ -107,6 +136,7 @@ class SponsorPolicyTest {
     @Test
     fun `非準備中的 onAdShown 是空操作`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         policy.onAdShown()
         assertEquals(SponsorStage.Ready, policy.stage)
@@ -115,6 +145,7 @@ class SponsorPolicyTest {
     @Test
     fun `暫時沒有時收到 onAdDismissed 不會跳到可點以外`() {
         val policy = SponsorPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         policy.onClick()
         policy.onAdUnavailable()

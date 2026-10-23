@@ -28,6 +28,8 @@
     <string name="settings_sponsor_unavailable">暂时没有可播的广告</string>
     <string name="settings_ads_section">广告设置</string>
     <string name="settings_ads_privacy">调整广告同意选项</string>
+    <string name="settings_ads_form_unavailable">目前地区没有可调整的广告同意选项</string>
+    <string name="settings_ads_form_failed">无法加载广告同意选项，请稍后再试</string>
 
     <string name="sponsor_thanks_title">感谢赞助</string>
     <string name="sponsor_thanks_body">你的支持让这个工具继续免费</string>

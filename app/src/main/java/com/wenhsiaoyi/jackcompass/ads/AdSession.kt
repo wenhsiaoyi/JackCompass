@@ -3,6 +3,7 @@ package com.wenhsiaoyi.jackcompass.ads
 import android.app.Activity
 import android.content.Context
 import android.os.SystemClock
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -19,7 +20,8 @@ import com.wenhsiaoyi.jackcompass.R
  * 橫幅就會在倒數未滿時重新進入 Loading、多算一次 impression。
  * 放在行程層，30 秒與「只播一次」才撐得過重建。
  *
- * UMP 的回呼都在主執行緒，所以下面的 state 寫入不需要額外同步。
+ * UMP 的回呼、以及 AdBootstrap 的初始化完成回呼都在主執行緒，
+ * 所以下面的 state 寫入不需要額外同步。
  */
 class AdSession(
     val banner: BannerPolicy = BannerPolicy(),
@@ -31,6 +33,18 @@ class AdSession(
 
     var sponsorStage by mutableStateOf(SponsorStage.Hidden)
         private set
+
+    /**
+     * 隱私選項表單失敗時要讓使用者看到的字串資源。
+     * 做成 State 是因為表單回呼在 UI 之外，Snackbar 得靠重組才拿得到。
+     */
+    var privacyOptionsSnackbarRes by mutableStateOf<Int?>(null)
+        private set
+
+    /** Snackbar 顯示完由 UI 歸零，否則 Activity 重建會再跳一次同一句。 */
+    fun clearPrivacyOptionsSnackbar() {
+        privacyOptionsSnackbarRes = null
+    }
 
     private var information: ConsentInformation? = null
 
@@ -111,7 +125,13 @@ class AdSession(
     /** 規範區使用者事後改同意的唯一入口；Google 政策要求一定要有。 */
     fun showPrivacyOptionsForm(activity: Activity, onDismissed: () -> Unit) {
         val info = information ?: return
-        UserMessagingPlatform.showPrivacyOptionsForm(activity) { _ ->
+        UserMessagingPlatform.showPrivacyOptionsForm(activity) { error ->
+            if (error != null) {
+                // 非規範區會回 INVALID_OPERATION。這裡不靜默：realme 實測按下去沒任何反應，
+                // 就是因為表單失敗只有 Google 的 logcat 看得见。
+                Log.w(TAG, "privacy options form failed: code=${error.errorCode} ${error.message}")
+                privacyOptionsSnackbarRes = privacyOptionsMessageRes(error.errorCode)
+            }
             finish(activity.applicationContext, info.canRequestAds())
             onDismissed()
         }
@@ -149,18 +169,26 @@ class AdSession(
     }
 
     private fun finish(context: Context, granted: Boolean) {
-        if (granted) {
-            AdBootstrap.initializeOnce(context)
-            banner.onConsentGranted()
-            sponsor.onConsentGranted()
-        } else {
+        if (!granted) {
             banner.onConsentDenied()
             sponsor.onConsentDenied()
+            sync()
+            return
         }
-        sync()
+        // 兩個閘門都在初始化完成的回呼裡放行：initialize 是背景執行緒的異步工作，
+        // 先開同意的話，250 毫秒的 tick 會比 SDK 就緒更早碰它（實測當過）。
+        AdBootstrap.initializeOnce(context) {
+            banner.onSdkReady()
+            sponsor.onSdkReady()
+            banner.onConsentGranted()
+            sponsor.onConsentGranted()
+            sync()
+        }
     }
 
     companion object {
+        private const val TAG = "AdSession"
+
         private var instance: AdSession? = null
 
         /** 行程層級：Activity 重建後回傳同一顆，政策與倒數不會重置。 */

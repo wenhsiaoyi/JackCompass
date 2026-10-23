@@ -24,11 +24,41 @@ class BannerPolicyTest {
     @Test
     fun `同意後進入載入中，且只允許請求一次`() {
         val policy = BannerPolicy()
+        policy.onSdkReady()
         policy.onConsentGranted()
         assertEquals(BannerStage.Loading, policy.stage)
         assertTrue(policy.mayRequestAd)
         policy.onAdLoaded(nowMillis = 1_000L)
         assertFalse("載入中結束後不再是 Loading，包裝層不會再發第二次請求", policy.mayRequestAd)
+    }
+
+    @Test
+    fun `同意通過但 SDK 還沒初始化完，不得請求廣告`() {
+        // 實測 crash：MobileAds.initialize 還在背景執行緒跑，橫幅就請求了
+        // → IllegalStateException: MobileAds.initialize must be called before using the SDK
+        val policy = BannerPolicy()
+        policy.onConsentGranted()
+        assertFalse("SDK 就緒前碰它就會當", policy.mayRequestAd)
+        policy.onSdkReady()
+        assertTrue("兩個閘門都開了才放行", policy.mayRequestAd)
+    }
+
+    @Test
+    fun `SDK 先就緒也一樣要等同意`() {
+        val policy = BannerPolicy()
+        policy.onSdkReady()
+        assertFalse(policy.mayRequestAd)
+        policy.onConsentGranted()
+        assertTrue(policy.mayRequestAd)
+    }
+
+    @Test
+    fun `拒絕同意后 SDK 就緒也不會放行`() {
+        val policy = BannerPolicy()
+        policy.onConsentDenied()
+        policy.onSdkReady()
+        assertFalse(policy.mayRequestAd)
+        assertEquals(BannerStage.Suppressed, policy.stage)
     }
 
     @Test
