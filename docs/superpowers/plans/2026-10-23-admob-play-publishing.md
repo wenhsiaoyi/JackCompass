@@ -111,6 +111,18 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump resources app\build\outputs\apk
 
 預期：`package: name='com.hywen.app.jackcompass'`；`admob_app_id` 解析出來的值是 `…3940256099942544~3347511713`（測試 ID，證明 debug 覆寫生效）。**兩項都要在報告裡貼出實際輸出**；若 badging 還是 `com.wenhsiaoyi…`，代表 Step 1 沒生效，停止並修。
 
+已實測（本 Task 執行時跑過，輸出原樣）：
+
+```text
+package: name='com.hywen.app.jackcompass' versionCode='1' versionName='1.0' platformBuildVersionName='17' ...
+    resource 0x7f0d001b string/admob_app_id
+      () "ca-app-pub-3940256099942544~3347511713"
+    resource 0x7f050002 bool/ads_force_eea_debug
+      () true
+```
+
+`aapt2 dump resources` 對 boolean 的印法就是 `() true`／`() false`（空限定符那一組），不是 `#0x00000001` 那種 token——Task 10 Step 7 依賴這個格式。
+
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -1813,7 +1825,7 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump resources app\build\outputs\apk
 E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump resources app\build\outputs\apk\release\app-release-unsigned.apk | Select-String "admob_app_id" -Context 0,3
 ```
 
-預期：`ads_force_eea_debug` 那一節值是 false、`admob_app_id` 是 `ca-app-pub-9662224353354096~1210011940`。**aapt2 對 boolean 資源的實際印法未在本案查證過**——把兩條輸出原樣貼進報告，只要看得出是 false 與正式 ID 就算過，不要因為 token 對不上就改指令。產出檔名是 `app-release-unsigned.apk` 屬正常——**release 簽名是非目標，不要在這裡加 signingConfig**。若 `assembleRelease` 因找不到產出路徑而失敗，先用 `Get-ChildItem app\build\outputs\apk\release` 看實際檔名，不要把指令改到別處。
+預期：`ads_force_eea_debug` 那一節值是 `() false`、`admob_app_id` 是 `ca-app-pub-9662224353354096~1210011940`。`aapt2 dump resources` 對 boolean 的印法已在 Task 1 Step 4 實測為 `() true`／`() false`，不是 `#0x…` token。把兩條輸出原樣貼進報告；若 token 對不上，先確認是不是限定符分組的差異，不要改指令。產出檔名是 `app-release-unsigned.apk` 屬正常——**release 簽名是非目標，不要在這裡加 signingConfig**。若 `assembleRelease` 因找不到產出路徑而失敗，先用 `Get-ChildItem app\build\outputs\apk\release` 看實際檔名，不要把指令改到別處。
 
 - [ ] **Step 8: 更新文件**
 

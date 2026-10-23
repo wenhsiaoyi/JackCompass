@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 廣告 ID。廣告位 ID 不是機密，刻意進版本庫。
+     debug 構型由 app/src/debug/res/values/ads.xml 覆寫成 Google 官方測試 ID。 -->
+<resources>
+    <string name="admob_app_id" translatable="false">ca-app-pub-9662224353354096~1210011940</string>
+    <string name="admob_banner_unit_id" translatable="false">ca-app-pub-9662224353354096/8618436515</string>
+    <string name="admob_interstitial_unit_id" translatable="false">ca-app-pub-9662224353354096/5418392251</string>
+
+    <!-- 把裝置強制成規範地區（EEA）好驗同意表單。只在 debug 構型為 true。 -->
+    <bool name="ads_force_eea_debug">false</bool>
+</resources>

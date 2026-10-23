@@ -8,7 +8,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.wenhsiaoyi.jackcompass"
+        applicationId = "com.hywen.app.jackcompass"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
