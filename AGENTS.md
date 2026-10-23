@@ -6,7 +6,7 @@ Kotlin + Jetpack Compose 寫的 Android 工具箱 App：**指南針 / 水平儀*
 `0e2f092` 當時只有 `README.md` 與 GitHub 的 Java 版 `.gitignore`；目前是一個可建置、可安裝的專案。
 
 **指南針、水平儀與經緯度都已實作**（感測器／定位 → `sensor/` 的 Flow 層 → Compose `Canvas` 盤面）。
-畫面是 2 個分頁（指南針／水平儀）＋ 1 個設定頁（右上齒輪進入，目前只有語系切換）。
+畫面是 2 個分頁（指南針／水平儀）＋ 1 個設定頁（右上齒輪進入：語系切換、贊助入口、廣告同意選項）。
 經緯度**不是**獨立分頁：它是指南針畫面上、大字度數與盤面之間的一列小字，裝置沒有定位硬體時整列不出現。
 `spec/prototype.jpg` 是設計參考圖，盤面已照它做出固定深色＋橘／綠的樣式；其餘出入見下方「原型落差」。
 
@@ -56,9 +56,9 @@ Kotlin + Jetpack Compose 寫的 Android 工具箱 App：**指南針 / 水平儀*
 
 - **`GLOSSARY.md` 與 `docs/adr/` 還不存在**：不存在就靜默略過，等真的有術語被定出來再建
   （見 `docs/agents/domain.md`）。
-- **測試只有純函式這一條接縫**：`app/src/test/` 只有 `sensor/` 底下的純函式測試（`SensorMathTest.kt`、
-  `LocationDisplayTest.kt`；JVM 可跑，是 `tdd` 目前的唯一接縫）；
-  專案**沒有** `androidTest/` source set，`sensor/` 的 Flow 層與 Compose 畫面都還沒測試。
+- **測試有兩條純函式接縫**：`app/src/test/` 只有 `sensor/`（`SensorMathTest.kt`、`LocationDisplayTest.kt`）
+  與 `ads/`（`BannerPolicyTest.kt`、`SponsorPolicyTest.kt`）的純函式測試，都是 JVM 可跑，也是 `tdd` 目前的兩條接縫；
+  專案**沒有** `androidTest/` source set，`sensor/` 的 Flow 層、`ads/` 碰 SDK 的那一截與 Compose 畫面都還沒測試。
 - **部分被引用的同伴 skill 還不存在**：`grill-with-docs` 與 `wayfinder` 要呼叫的
   `grilling`／`domain-modeling`／`research`／`prototype`、`tdd` 指向的 `codebase-design`，在 `.agents/`、
   `~/.agents/skills/`、`~/.claude/skills/` 都找不到。碰到就先告訴使用者缺哪一個，
@@ -94,7 +94,12 @@ Single-context: one `GLOSSARY.md` plus `docs/adr/` at the repo root. See `docs/a
 | JDK | 17 | `compileOptions` |
 
 其他相依套件：`androidx.activity:activity-compose:1.13.0`、`androidx.navigation:navigation-compose:2.10.2`、
-`androidx.appcompat:appcompat:1.8.0`（語系切換）、`kotlinx-coroutines-android:1.10.2`；測試用 `junit:4.13.2`。
+`androidx.appcompat:appcompat:1.8.0`（語系切換）、`kotlinx-coroutines-android:1.10.2`；測試用 `junit:4.13.2`；
+廣告用 GMA Next-Gen SDK `com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk:1.5.0`
+與 UMP `com.google.android.ump:user-messaging-platform:4.0.0`。
+
+**`applicationId` 是 `com.hywen.app.jackcompass`，但 `namespace` 與原始碼目錄仍是 `com.wenhsiaoyi.jackcompass`**
+——這是刻意的，不要把它們「修正」成一致。
 
 ## 常用指令
 
@@ -102,7 +107,7 @@ Single-context: one `GLOSSARY.md` plus `docs/adr/` at the repo root. See `docs/a
 .\gradlew.bat assembleDebug        # 產出 app/build/outputs/apk/debug/app-debug.apk
 .\gradlew.bat installDebug         # 裝到已連接的裝置／emulator
 .\gradlew.bat lint                 # 靜態檢查
-.\gradlew.bat test                 # JVM 單元測試（sensor/ 的純函式）
+.\gradlew.bat test                 # JVM 單元測試（sensor/ 與 ads/ 的純函式）
 ```
 
 **一律用 `.\gradlew.bat`，不要用 PATH 上的 `gradle`。** 見下方工具鏈說明。
@@ -124,6 +129,9 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
 - **SDK 路徑**：`E:\Android\Sdk`，`ANDROID_HOME` 與 `ANDROID_SDK_ROOT` 都有設。
   `local.properties` 裡也寫了一份 `sdk.dir`。**`local.properties` 已被 gitignore，不要 commit。**
 - **`adb` 不在 `PATH`**，要用的話走完整路徑 `E:\Android\Sdk\platform-tools\adb.exe`。
+- **`GRADLE_USER_HOME=E:\gradle-home`（把 Gradle 大檔放在 repo 外）在 git-bash 裡一定要加雙引號並改用斜線**：
+  `GRADLE_USER_HOME="E:/gradle-home"`。不加引號時反斜線會被吃掉，變成 `E:gradle-home` 相對路徑，
+  實測在 repo 內長出一個 1.1 GB 的 `gradle-home/`。
 - AGP 在第一次建置時會**自動下載並安裝缺少的 SDK platform**
   （本專案已讓它裝了 `android-37.0`）。這是正常行為，不是錯誤。
 - `kotlinc` 未安裝，一切編譯都走 Gradle。
@@ -150,6 +158,14 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
   `SensorMath.kt`／`LocationMath.kt` 是純函式換算（無 Android 相依、JVM 可測），
   `SensorFlows.kt`（`SensorManager`）／`LocationFlow.kt`（`LocationManager`）把系統回呼包成 `Flow`
   ——進畫面才註冊、離開自動解除，濾波器每個收集者各一份
+- `ads/` 是廣告與贊助層，同樣拆成兩截：
+  `BannerPolicy.kt`／`SponsorPolicy.kt` 是**純函式**的狀態機（無 Android 相依、JVM 可測，秒數與階段判斷都在這裡），
+  `AdMobBanner.kt`／`AdMobInterstitial.kt`／`AdBootstrap.kt`／`AdSession.kt` 是唯一接觸 SDK 的一截；
+  `AdSession` 把兩個 policy 的階段鏡射進 `mutableStateOf` 讓 Compose 觀察，並用 `AdSession.ensure()`
+  做成 process 層單例——`AppCompatDelegate.setApplicationLocales` 會重建 Activity，廣告進度不能跟著被重置。
+  橫幅每次執行只載入一次、顯示 30 秒後收起；插屏只從設定頁的贊助入口播，不自動播。
+  任何廣告請求之前都要先過 UMP 同意鏈（`runConsentChain`），拒絕同意時橫幅不出現、贊助列隱藏，
+  但「調整廣告同意選項」那一列**永遠可見**。
 - `ui/theme/`：Material 3 + API 31 以上動態取色；盤面另用固定深色色板（`DialScreen`／`CompassOrange`／`LevelGreen`…），刻意不跟動態取色
 - 語系檔：`values/`（英文，預設）、`values-zh-rTW/`、`values-zh-rCN/`；系統 App 語言清單在 `res/xml/locales_config.xml`
 - 原始碼放在 **`app/src/main/java/`**（AGP 內建 Kotlin 的預設路徑，同時相容 Java 檔案）
@@ -190,3 +206,14 @@ E:\Android\Sdk\build-tools\37.0.0\aapt2.exe dump badging app\build\outputs\apk\d
   指南針刻度震動用的 `VibrationEffect.createOneShot`／`Vibrator.vibrate` 要 API 26，而 minSdk 是 24
   （API 24/25 上按到震動會當），另外 `app_name` 未翻譯成 zh。
 - 專案沒有設定任何 branch / PR / 發布流程，沿用使用者預設。
+- **開發期間不得點自己的廣告。** AdMob 會把開發者自己點自己廣告判成無效流量，嚴重者停權；
+  程式碼與資源檔裡只允許 Google 官方測試 ID，正式 ID 只放在 `app/src/main/res/values/ads.xml`，
+  debug 構型由 `app/src/debug/res/values/ads.xml` 覆寫成測試 ID＋EEA 除錯地區。
+  廣告單元 ID 不是機密，可以 commit。
+- 取 Activity 一律用 `androidx.activity.compose.LocalActivity`（`LocalActivity.current`，型別 `Activity?`）。
+  它**不在 `compose-ui`**——`AndroidCompositionLocals_androidKt` 沒有 `getLocalActivity`，是
+  `androidx.activity:activity-compose` 提供的；只查 `ui.aar` 會誤判成「本專案沒有」，這是踩過的坑。
+  平台**沒有公開的 reduce-motion API**（`AccessibilityManager` 查無相關方法，android-33/36/37 都查過），
+  「降低動態效果」靠 `Settings.Global` 的 `ANIMATOR_DURATION_SCALE`／`TRANSITION_ANIMATION_SCALE`
+  是否歸零判定——網路教學裡的 `isReducedMotionSettingEnabled()` 不存在，`compose-ui` 那個
+  `LocalAccessibilityManager...isReduceMotionEnabled()` 也沒有。

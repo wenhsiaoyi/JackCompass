@@ -10,8 +10,10 @@
 | 指南針 | `TYPE_ROTATION_VECTOR` | 大字方位角＋方位名，下方是會反向旋轉的羅盤盤面；指針固定朝上、指向正北時轉綠，度數每跨一度震動一格。顯示的是磁北方位，**未做磁偏角修正** |
 | 水平儀 | `TYPE_ACCELEROMETER` | 水平／垂直兩種模式，氣泡管會跟著換方向 |
 | 經緯度 | `LocationManager`（框架內建，無額外相依） | 顯示在指南針的大字度數與盤面之間，排版與小數點跟著語系走；還沒定位時顯示佔位，裝置沒有定位硬體時整列隱藏。**不含海拔、速度與地圖** |
+| 橫幅廣告 | AdMob（GMA Next-Gen SDK） | 每次啟動只載入一次，錨在底部導覽列上方，顯示 30 秒後收起，這次執行不再出現；完全退出重開才會再跑一次。前提是先通過 Google 的廣告同意表單 |
+| 贊助入口 | AdMob 全螢幕廣告 | 設定頁的「看廣告支持開發者」，看了只播感謝動畫，**不解鎖任何功能**；從這裡才會播插屏，其他時刻一律不自動播 |
 
-介面是 2 個分頁（指南針／水平儀）＋ 1 個設定頁（右上齒輪進入）。
+介面是 2 個分頁（指南針／水平儀）＋ 1 個設定頁（右上齒輪進入：語系切換、贊助入口、調整廣告同意選項）。
 語系有英文（預設）、繁體中文與簡體中文，在設定頁切換。
 
 ## 設計參考
@@ -37,6 +39,11 @@
 | 導覽 | Navigation Compose 2.10.2 |
 | 非同步 | kotlinx-coroutines-android 1.10.2 |
 | 語系切換 | androidx.appcompat 1.8.0（`AppCompatDelegate.setApplicationLocales`） |
+| 廣告 | GMA Next-Gen SDK 1.5.0（`com.google.android.libraries.ads.mobile.sdk`） |
+| 同意管理 | User Messaging Platform 4.0.0 |
+
+> `applicationId` 是 `com.hywen.app.jackcompass`，但 `namespace` 與原始碼目錄仍是
+> `com.wenhsiaoyi.jackcompass`——刻意不一致，不要把目錄 rename 過去。
 
 > AGP 9.0 起 Kotlin 為**內建支援**，建置腳本刻意**不套用** `org.jetbrains.kotlin.android` plugin。
 > 網路上多數教學仍會套用，照抄會導致建置失敗。
@@ -52,7 +59,7 @@
 ```powershell
 .\gradlew.bat assembleDebug    # 產物：app/build/outputs/apk/debug/app-debug.apk
 .\gradlew.bat installDebug     # 安裝至已連線的裝置或 emulator
-.\gradlew.bat test             # JVM 單元測試（sensor/ 的純函式）
+.\gradlew.bat test             # JVM 單元測試（sensor/ 與 ads/ 的純函式）
 .\gradlew.bat lint             # 靜態檢查
 ```
 
@@ -71,12 +78,20 @@ app/src/main/java/com/wenhsiaoyi/jackcompass/
 │   ├── SensorFlows.kt      SensorManager → Flow
 │   ├── LocationMath.kt     經緯度格式化、定位可用性判定（同上）
 │   └── LocationFlow.kt     LocationManager → Flow
+├── ads/                    廣告與贊助層，同樣「純函式 ＋ SDK 包裝」兩截
+│   ├── BannerPolicy.kt     橫幅 30 秒生命週期的狀態機（無 Android 相依，JVM 可測）
+│   ├── SponsorPolicy.kt    贊助入口 Hidden／Ready／Preparing／Playing／Unavailable 狀態機
+│   ├── AdBootstrap.kt      MobileAds 初始化（只跑一次）
+│   ├── AdMobBanner.kt      橫幅載入與交付 View
+│   ├── AdMobInterstitial.kt 全螢幕廣告載入與播放
+│   └── AdSession.kt        串同意鏈、兩個 policy 與 Compose 的可觀察狀態（process 層單例）
 └── ui/
     ├── JackCompassApp.kt   Scaffold + 底部導覽列 + NavHost
+    ├── components/         BannerSlot（導覽列上方的橫幅槽）、SponsorThanksOverlay（感謝動畫）
     ├── theme/              Material 3 主題、動態取色與盤面固定色板
     ├── compass/            指南針畫面（含經緯度列）
     ├── level/              水平儀畫面
-    └── settings/           設定頁（語系切換）
+    └── settings/           設定頁（語系切換、贊助入口、廣告同意選項）
 ```
 
 原始碼置於 `src/main/java/`（AGP 內建 Kotlin 的預設路徑，同時相容 Java 檔案）。
@@ -94,6 +109,7 @@ app/src/main/java/com/wenhsiaoyi/jackcompass/
 - 感測器與定位的 `uses-feature` 全部明寫 `required="false"`。少了這行，AGP 會因 `ACCESS_FINE_LOCATION` 自動把 `android.hardware.location` 標成必要，沒有定位硬體的裝置裝不上，經緯度的「無硬體就隱藏」也永遠走不到
 - `android.location.LocationListener` 有三個回呼到 API 30 才變成 default 方法，`LocationFlow.kt` 把它們補齊不是冗餘程式碼——縮成 lambda 在 API 24–29 會當
 - `.\gradlew.bat lint` 目前會報 3 個 error（震動用的 API 要 26 但 minSdk 是 24、`app_name` 未翻譯成中文），是尚未處理的既有問題
+- **開發期間不要點自己的廣告**，AdMob 會判定無效流量、嚴重者停權。廣告 ID 分兩份資源：正式 ID 只在 `app/src/main/res/values/ads.xml`，`app/src/debug/res/values/ads.xml` 覆寫成 Google 官方測試 ID 並把除錯地區強制設為 EEA，所以 debug 構型看得到同意表單、release 不會
 
 ## License
 
