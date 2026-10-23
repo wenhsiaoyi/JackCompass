@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="900" viewBox="0 0 1480 900" role="img" aria-label="贊助流程與橫幅四格設計模擬圖">
+  <!--
+    JackCompass 廣告設計模擬圖（設計定稿附件）
+    色板取自盤面固定深色：DialScreen #0A0D10／DialFace #151A20／DialRing #3A434D／
+    DialTick #8A94A0／DialText #C3CAD3／CompassOrange #F57C00／LevelGreenBright #00E676／
+    LevelTube #26301F
+    這不是截圖，是設計基準：四格全是本 App 自己繪製的畫面，
+    Google 主控的同意表單不在圖內（會改版，等實裝後另附真截圖）。
+  -->
+  <defs>
+    <style>
+      .screen { fill: #0A0D10; }
+      .face { fill: #151A20; }
+      .ring { fill: none; stroke: #3A434D; stroke-width: 3; }
+      .dtxt { fill: #C3CAD3; font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif; }
+      .caption { fill: #8A94A0; font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif; }
+      .capnum { fill: #F57C00; font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif; font-size: 15px; font-weight: 700; }
+      .frame { fill: none; stroke: #2A313C; stroke-width: 2; }
+      .adbox { fill: #10151B; stroke: #F57C00; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .chev { fill: none; stroke: #8A94A0; stroke-width: 2; }
+    </style>
+    <!-- 羅盤玫瑰：指南針盤面與感謝動畫共用的母圖（指針長 92） -->
+    <g id="rose">
+      <path d="M0-92 16-12 0-24 -16-12Z" fill="#F57C00"/>
+      <path d="M0 92 -16 12 0 24 16 12Z" fill="#3A434D"/>
+      <path d="M-92 0 -12-16 -24 0 -12 16Z" fill="#2A313C"/>
+      <path d="M92 0 12-16 24 0 12 16Z" fill="#2A313C"/>
+      <circle r="9" fill="#C3CAD3"/>
+      <circle r="3.5" fill="#0A0D10"/>
+    </g>
+    <g id="navbar">
+      <rect width="320" height="66" class="face"/>
+      <text x="88" y="39" class="dtxt" font-size="14" text-anchor="middle">指南針</text>
+      <text x="232" y="39" class="dtxt" font-size="14" text-anchor="middle">水平儀</text>
+      <rect x="52" y="52" width="72" height="4" rx="2" fill="#F57C00"/>
+    </g>
+  </defs>
+
+  <rect width="1480" height="900" fill="#060809"/>
+  <text x="40" y="44" class="dtxt" font-size="22" font-weight="600">贊助流程 ＋ 橫幅生命週期 — 設計基準（非截圖）</text>
+  <text x="40" y="70" class="caption" font-size="15">色板＝盤面固定深色；四格全是本 App 自己繪製的畫面，Google 主控的同意表單不在此圖內。</text>
+
+  <!-- ============ 格 1：設定頁的兩個新區塊 ============ -->
+  <g transform="translate(40,104)">
+    <rect x="-8" y="-8" width="336" height="656" rx="18" class="frame"/>
+    <rect width="320" height="640" rx="14" class="screen"/>
+    <text x="160" y="46" class="dtxt" font-size="17" text-anchor="middle">設定</text>
+
+    <text x="24" y="104" class="dtxt" font-size="12" letter-spacing="3">語言</text>
+    <g transform="translate(24,116)">
+      <rect width="272" height="40" rx="20" class="face"/>
+      <rect x="182" width="90" height="40" rx="20" fill="#26301F"/>
+      <text x="45" y="25" class="dtxt" font-size="12" text-anchor="middle">English</text>
+      <text x="136" y="25" class="dtxt" font-size="12" text-anchor="middle">简体中文</text>
+      <text x="227" y="25" font-size="12" fill="#00E676" text-anchor="middle" font-family="Microsoft JhengHei">繁體中文</text>
+    </g>
+
+    <text x="24" y="204" class="dtxt" font-size="12" letter-spacing="3">支持開發者</text>
+    <g transform="translate(24,218)">
+      <rect width="272" height="58" rx="12" class="face"/>
+      <text x="18" y="26" class="dtxt" font-size="14">看廣告支持開發者</text>
+      <text x="18" y="45" class="caption" font-size="11">看完一段全屏廣告，不解鎖任何功能</text>
+      <path d="M248 26 254 20 248 14" class="chev"/>
+    </g>
+    <g transform="translate(24,288)" font-size="11">
+      <rect width="84" height="26" rx="13" class="face"/>
+      <text x="42" y="17" fill="#00E676" text-anchor="middle" font-family="Microsoft JhengHei">可點</text>
+      <rect x="94" width="84" height="26" rx="13" class="face"/>
+      <circle cx="120" cy="13" r="6" fill="none" stroke="#F57C00" stroke-width="2" stroke-dasharray="26 8"/>
+      <text x="150" y="17" class="dtxt" font-family="Microsoft JhengHei">準備中</text>
+      <rect x="188" width="84" height="26" rx="13" class="face"/>
+      <text x="230" y="17" class="caption" text-anchor="middle" font-family="Microsoft JhengHei">暫時沒有</text>
+    </g>
+
+    <text x="24" y="356" class="dtxt" font-size="12" letter-spacing="3">廣告設定</text>
+    <g transform="translate(24,370)">
+      <rect width="272" height="46" rx="12" class="face"/>
+      <text x="18" y="28" class="dtxt" font-size="14">調整廣告同意選項</text>
+      <path d="M248 23 254 17 248 11" class="chev"/>
+    </g>
+    <text x="24" y="446" class="caption" font-size="11">拒絕同意：橫幅整場不出現，</text>
+    <text x="24" y="464" class="caption" font-size="11">贊助列藏起來，廣告設定留著。</text>
+
+    <g transform="translate(0,524)">
+      <rect width="320" height="50" class="adbox"/>
+      <text x="160" y="30" fill="#F57C00" font-size="12" text-anchor="middle" font-family="Microsoft JhengHei">橫幅廣告 · 倒數中</text>
+    </g>
+    <use href="#navbar" x="0" y="574"/>
+    <text x="0" y="690" class="capnum">① 設定頁新增兩區塊</text>
+  </g>
+
+  <!-- ============ 格 2：感謝贊助動畫 ============ -->
+  <g transform="translate(400,104)">
+    <rect x="-8" y="-8" width="336" height="656" rx="18" class="frame"/>
+    <rect width="320" height="640" rx="14" class="screen"/>
+    <rect width="320" height="640" rx="14" fill="#000000" fill-opacity="0.55"/>
+    <g transform="translate(160,236)">
+      <rect x="-118" y="-118" width="236" height="236" rx="18" class="face" stroke="#3A434D"/>
+      <g transform="scale(0.78)">
+        <circle r="104" fill="none" stroke="#F57C00" stroke-opacity="0.35" stroke-width="6"/>
+        <circle r="92" class="ring"/>
+        <use href="#rose"/>
+      </g>
+    </g>
+    <text x="160" y="424" class="dtxt" font-size="26" font-weight="700" text-anchor="middle">感謝贊助</text>
+    <text x="160" y="452" class="caption" font-size="13" text-anchor="middle">你的支持讓這個工具繼續免費</text>
+    <g transform="translate(24,498)">
+      <line x1="0" y1="0" x2="272" y2="0" stroke="#3A434D" stroke-width="2"/>
+      <circle cx="0" cy="0" r="5" fill="#F57C00"/>
+      <circle cx="136" cy="0" r="5" fill="#F57C00"/>
+      <circle cx="272" cy="0" r="5" fill="#8A94A0"/>
+      <text x="0" y="-12" class="dtxt" font-size="11">0.0s 淡入</text>
+      <text x="112" y="24" class="dtxt" font-size="11" text-anchor="middle">0.5s 縮放到 1.0</text>
+      <text x="272" y="-12" class="dtxt" font-size="11" text-anchor="end">1.6s 淡出</text>
+    </g>
+    <text x="24" y="556" class="caption" font-size="11">降低動態效果：只淡入淡出，</text>
+    <text x="24" y="574" class="caption" font-size="11">羅盤不縮放、外圈光暈不出現。</text>
+    <text x="24" y="600" class="caption" font-size="11">插屏呈現失敗時不進這格。</text>
+    <text x="0" y="690" class="capnum">② 感謝動畫 · 1.6 秒自動消失</text>
+  </g>
+
+  <!-- ============ 格 3：橫幅顯示中（指南針） ============ -->
+  <g transform="translate(760,104)">
+    <rect x="-8" y="-8" width="336" height="656" rx="18" class="frame"/>
+    <rect width="320" height="640" rx="14" class="screen"/>
+    <text x="160" y="66" class="dtxt" font-size="44" font-weight="700" text-anchor="middle">124°</text>
+    <text x="160" y="94" class="caption" font-size="13" text-anchor="middle">北緯 24.9574°、東經 121.2642°</text>
+    <circle cx="292" cy="40" r="11" fill="none" stroke="#8A94A0" stroke-width="2"/>
+    <g transform="translate(160,316)">
+      <circle r="136" class="face"/>
+      <circle r="126" class="ring"/>
+      <g transform="scale(1.0)"><use href="#rose"/></g>
+      <text x="0" y="-104" class="dtxt" font-size="15" text-anchor="middle">N</text>
+      <text x="108" y="5" class="dtxt" font-size="15" text-anchor="middle">E</text>
+      <text x="0" y="118" class="dtxt" font-size="15" text-anchor="middle">S</text>
+      <text x="-108" y="5" class="dtxt" font-size="15" text-anchor="middle">W</text>
+    </g>
+    <g transform="translate(0,522)">
+      <rect width="320" height="52" class="adbox"/>
+      <text x="160" y="22" fill="#F57C00" font-size="12" text-anchor="middle" font-family="Microsoft JhengHei">橫幅廣告（AdView）</text>
+      <text x="160" y="40" class="caption" font-size="11" text-anchor="middle">顯示出來的那一刻才開始倒數 30 秒</text>
+    </g>
+    <use href="#navbar" x="0" y="574"/>
+    <text x="0" y="690" class="capnum">③ 掛在導覽列正上方</text>
+  </g>
+
+  <!-- ============ 格 4：30 秒到、收起後的 reflow ============ -->
+  <g transform="translate(1120,104)">
+    <rect x="-8" y="-8" width="336" height="656" rx="18" class="frame"/>
+    <rect width="320" height="640" rx="14" class="screen"/>
+    <text x="160" y="66" class="dtxt" font-size="44" font-weight="700" text-anchor="middle">124°</text>
+    <text x="160" y="94" class="caption" font-size="13" text-anchor="middle">北緯 24.9574°、東經 121.2642°</text>
+    <circle cx="292" cy="40" r="11" fill="none" stroke="#8A94A0" stroke-width="2"/>
+    <g transform="translate(160,342)">
+      <circle r="136" class="face"/>
+      <circle r="126" class="ring"/>
+      <g transform="scale(1.0)"><use href="#rose"/></g>
+      <text x="0" y="-104" class="dtxt" font-size="15" text-anchor="middle">N</text>
+      <text x="108" y="5" class="dtxt" font-size="15" text-anchor="middle">E</text>
+      <text x="0" y="118" class="dtxt" font-size="15" text-anchor="middle">S</text>
+      <text x="-108" y="5" class="dtxt" font-size="15" text-anchor="middle">W</text>
+    </g>
+    <use href="#navbar" x="0" y="574"/>
+    <text x="24" y="500" class="caption" font-size="11">30 秒到：整條橫幅移除，導覽列往下補位。</text>
+    <text x="24" y="518" class="caption" font-size="11">盤面直徑由寬度決定（minOf），</text>
+    <text x="24" y="536" class="caption" font-size="11">不會變大，只有中心下移約 26。</text>
+    <text x="24" y="560" class="caption" font-size="11">重組／切背景／換分頁都不重置倒數。</text>
+    <text x="0" y="690" class="capnum">④ 收起後：盤面大小不變</text>
+  </g>
+
+  <text x="40" y="838" class="caption" font-size="13">對應規則：橫幅＝本次執行載入一次、顯示滿 30 秒收起、載入失敗不重試；插屏＝只在贊助入口，絕不自動播。</text>
+  <text x="40" y="862" class="caption" font-size="13">同意鏈：請求同意更新 → 需要時顯示表單 → 才初始化廣告 SDK（背景執行緒）→ 可請求才放行上面兩格。</text>
+</svg>
